@@ -3,6 +3,9 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use App\ServicesContainer\GameUsService;
+use App\ServicesContainer\TranslateService;
+
 
 class Game extends Command
 {
@@ -35,14 +38,16 @@ class Game extends Command
      *
      * @return int
      */
-    public function handle()
+    public function handle(GameUSService $CURL, TranslateService $Translate)
     {
+        $CURL->getGamePrice();
+        $Translate->getGameNameList();
         print_r($this->argument());
 
         // $slice_num = 10;
         // $bar = $this->output->createProgressBar($slice_num);
         // $bar->start();
-        // for($i = 0; $i < $slice_num; ++$i) {
+        // for ($i = 0; $i < $slice_num; ++$i) {
         //     sleep(1);   // 模拟执行耗时任务
         //     $bar->advance();
         // } 
