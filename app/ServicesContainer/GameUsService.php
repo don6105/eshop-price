@@ -3,7 +3,7 @@
 namespace App\ServicesContainer;
 
 use App\Contracts\GameUsContract;
-use App\Models\Game;
+use App\Models\GameUs;
 use Illuminate\Support\Facades\Log;
 
 define('US_ALGOLIA_ID',  'U3B6GR4UA3');
@@ -99,27 +99,29 @@ class GameUsService implements GameUsContract
         $result = $response['results'][0]['hits'] ?? [];
         if (empty($result)) { return false; }
         foreach ($result as $row) {
-            $game = new Game;
-            $game->Title        = $row['title'];
-            $game->URL          = $row['url'];
-            $game->NSUID        = $row['nsuid'];
-            $game->Boxart       = $row['boxart'];
-            $game->ReleaseDate  = $row['releaseDateDisplay'];
-            $game->NumOfPlayers = $row['numOfPlayers'];
-            $game->Genres       = $row['genres'];
-            $game->Publishers   = $row['publishers'];
-            $game->NSO          = $row['generalFilters'];
-            $game->MSRP         = $row['msrp'];
-            $game->LowestPrice  = $row['lowestPrice'];
-            $game->PriceRange   = $row['priceRange'];
-            $game->Availability = $row['availability'];
-            $game->ObjectID     = $row['objectID'];
-            $game->Description  = $row['description'];
-            $game->Player1      = $row['playerFilters'];
-            $game->Player2      = $row['playerFilters'];
-            $game->Player3      = $row['playerFilters'];
-            $game->Player4      = $row['playerFilters'];
-            $game->save();
+            $game      = new GameUs;
+            $game_data = [
+                'Title'        => $row['title'],
+                'URL'          => $row['url'],
+                'NSUID'        => $row['nsuid'],
+                'Boxart'       => $row['boxart'],
+                'ReleaseDate'  => $row['releaseDateDisplay'],
+                'NumOfPlayers' => $row['numOfPlayers'],
+                'Genres'       => $row['genres'],
+                'Publishers'   => $row['publishers'],
+                'NSO'          => $row['generalFilters'],
+                'MSRP'         => $row['msrp'],
+                'LowestPrice'  => $row['lowestPrice'],
+                'PriceRange'   => $row['priceRange'],
+                'Availability' => $row['availability'],
+                'ObjectID'     => $row['objectID'],
+                'Description'  => $row['description'],
+                'Player1'      => $row['playerFilters'],
+                'Player2'      => $row['playerFilters'],
+                'Player3'      => $row['playerFilters'],
+                'Player4'      => $row['playerFilters']
+            ];
+            $game->insertOrUpdate($game_data);
         }
     }
 }

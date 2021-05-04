@@ -2,19 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+// use Illuminate\Database\Eloquent\Model;
+use App\Models\BaseModel as Model;
 
-class Game extends Model
+class GameUs extends Model
 {
-    use HasFactory;
-
     const CREATED_AT = 'CreateTime';
     const UPDATED_AT = 'UpdateTime';
 
     public $incrementing = true;
 
-    protected $table = 'game';
+    protected $table = 'game_us';
     protected $primaryKey = 'ID';
 
     public function setReleaseDateAttribute($value)
