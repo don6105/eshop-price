@@ -2,7 +2,7 @@
 
 namespace App\Contracts;
 
-interface TranslateContract
+interface Translate
 {
     public function getGameNameList();
 }

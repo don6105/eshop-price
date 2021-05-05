@@ -2,7 +2,7 @@
 
 namespace App\Contracts;
 
-interface GameUsContract
+interface GameUs
 {
     public function getGamePrice();
 }

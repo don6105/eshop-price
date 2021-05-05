@@ -3,9 +3,6 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\ServicesContainer\GameUsService;
-use App\ServicesContainer\TranslateService;
-
 
 class Game extends Command
 {
@@ -38,10 +35,10 @@ class Game extends Command
      *
      * @return int
      */
-    public function handle(GameUSService $CURL, TranslateService $Translate)
+    public function handle()
     {
-        $CURL->getGamePrice();
-        $Translate->getGameNameList();
+        app('GameUs')->getGamePrice();
+        // $game_list = app('Translate')->getGameNameList();
         print_r($this->argument());
 
         // $slice_num = 10;

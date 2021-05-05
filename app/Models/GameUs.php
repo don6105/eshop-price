@@ -2,18 +2,26 @@
 
 namespace App\Models;
 
-// use Illuminate\Database\Eloquent\Model;
-use App\Models\BaseModel as Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Base as Model;
 
 class GameUs extends Model
 {
+    use HasFactory;
+
     const CREATED_AT = 'CreateTime';
     const UPDATED_AT = 'UpdateTime';
 
     public $incrementing = true;
-
+    
     protected $table = 'game_us';
     protected $primaryKey = 'ID';
+
+    public function setURLAttribute($value)
+    {
+        $value = empty($value) ?: 'https://www.nintendo.com'.$value;
+        $this->attributes['URL'] = $value;
+    }
 
     public function setReleaseDateAttribute($value)
     {

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\ServicesContainer;
+namespace App\Services;
 
-use App\Contracts\TranslateContract;
+use App\Contracts\Translate as TranslateContract;
 
-class TranslateService implements TranslateContract
+class Translate implements TranslateContract
 {
     public function getGameNameList()
     {
