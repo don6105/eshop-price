@@ -13,8 +13,8 @@ class GameUs extends Model
     const UPDATED_AT = 'UpdateTime';
 
     public $incrementing = true;
-    
-    protected $table = 'game_us';
+
+    protected $table      = 'game_us';
     protected $primaryKey = 'ID';
 
     public function setURLAttribute($value)

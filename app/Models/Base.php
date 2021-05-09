@@ -32,13 +32,13 @@ class Base extends Model {
         $builder    = $this->newQuery()->getQuery();   // 查詢構造器
         $grammar    = $builder->getGrammar();          // 語法器
         // 編譯Insert SQL
-        $insert     = $grammar->compileInsert($builder, $values); 
+        $insert = $grammar->compileInsert($builder, $values); 
         // 編譯重復後的更新SQL。
-        $update     = $this->compileUpdateColumns($grammar, $value);
+        $update = $this->compileUpdateColumns($grammar, $value);
         // 組裝查詢SQL
-        $query      = $insert.' on duplicate key update '.$update;
+        $query = $insert.' on duplicate key update '.$update;
         // 組裝SQL並綁定參數
-        $bindings   = $this->prepareBindingsForInsertOrUpdate($values, $value);
+        $bindings = $this->prepareBindingsForInsertOrUpdate($values, $value);
         // 執行資料庫查詢
         return $connection->insert($query, $bindings);
     }

@@ -11,7 +11,8 @@ class Batch extends Model
 
     public $incrementing = true;
     public $timestamps   = false;
-    
-    protected $table = 'batch';
+
+    protected $table      = 'batch';
     protected $primaryKey = 'ID';
+    protected $fillable   = ['Country'];
 }

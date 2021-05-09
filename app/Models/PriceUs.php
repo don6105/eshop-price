@@ -9,6 +9,10 @@ class PriceUs extends Model
 {
     use HasFactory;
 
-    protected $table = 'price_us';
+    public $incrementing = true;
+    public $timestamps   = false;
+
+    protected $table      = 'price_us';
     protected $primaryKey = 'ID';
+    protected $fillable   = ['BatchID', 'GameID', 'Price'];
 }
