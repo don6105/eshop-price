@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\GameUs as GameUsContract;
 use App\Models\Batch as BatchModel;
 use App\Models\GameUs as GameUsModel;
+use App\Models\PriceUs as PriceUsModel;
 use Illuminate\Support\Facades\Log;
 
 define('US_ALGOLIA_ID',  'U3B6GR4UA3');
@@ -13,7 +14,34 @@ define('US_QUERY_URL',   'https://'.US_ALGOLIA_ID.'-dsn.algolia.net/1/indexes/*/
 
 class GameUs implements GameUsContract
 {
-    private $numPerPage = 40;
+    private $num_per_page = 40;
+    private $output = null;
+
+    public function __get($name)
+    {
+        if ($name == 'batch_id') {
+            $batch = new BatchModel();
+            $batch->Country   = 'us';
+            $batch->StartTime = date('Y-m-d H:i:s');
+            $batch->save();
+            $this->batch_id = $batch->getKey();
+            return $this->batch_id;
+        }
+    }
+
+    public function __destruct()
+    {
+        if (isset($this->batch_id)) {
+            $batch = BatchModel::firstWhere('ID', $this->batch_id);
+            $batch->EndTime = date('Y-m-d H:i:s');
+            $batch->save();
+        }
+    }
+
+    public function setOutput($output)
+    {
+        $this->output = $output;
+    }
 
     public function getGamePrice()
     {
@@ -23,16 +51,26 @@ class GameUs implements GameUsContract
             $data    = $this->getGamesData($header, $query);
             $total   = $this->getTotalGamesNum($data);
             $is_save = $this->saveGamesData($data);
+            $this->progressBar(ceil($total/$this->num_per_page));
             if (!$is_save) { break; }
-            break;
         }
     }
 
-    private function getBatchID()
+    private function progressBar($sliceNum = 0)
     {
-        $batch = new Batch();
-        $batch->Country   = 'us';
-        $batch->StartTime = date('Y-m-d H:i:s');
+        static $bar, $count;
+        if (!isset($this->output)) { return false; }
+        if (isset($sliceNum) && !isset($bar)) {
+            $bar = $this->output->createProgressBar($sliceNum);
+            $bar->start();
+        }
+        if (isset($bar)) {
+            $bar->advance();
+            $count = isset($count)? $count+1 : 1;
+        }
+        if ($count == $sliceNum) {
+            $bar->finish();
+        }
     }
 
     private function getQueryParam($page = 0)
@@ -54,7 +92,7 @@ class GameUs implements GameUsContract
         $param->indexName = 'ncom_game_en_us_price_asc';
         $param->params    = http_build_query([
             'query'             => '',
-            'hitsPerPage'       => $this->numPerPage,
+            'hitsPerPage'       => $this->num_per_page,
             'maxValuesPerFacet' => 30,
             'page'              => $page,
             'analytics'         => 'false',
@@ -120,8 +158,13 @@ class GameUs implements GameUsContract
         $result = $response['results'][0]['hits'] ?? [];
         if (empty($result)) { return false; }
 
-        $game = new GameUsModel();
+        $game  = new GameUsModel();
+        $price_data   = [];
+        $de_duplicate = [];
         foreach ($result as $row) {
+            if (isset($row['title']) && isset($de_duplicate[ $row['title'] ])) {
+                continue;
+            }
             $game_data = [
                 'Title'        => $row['title'] ?? '',
                 'URL'          => $row['url'] ?? '',
@@ -144,7 +187,18 @@ class GameUs implements GameUsContract
                 'Player4'      => $row['playerFilters'] ?? []
             ];
             $game->insertOrUpdate($game_data);
+            $curr = $game::firstWhere('Title', $row['title']);
+            $de_duplicate[ $row['title'] ] = true;
+
+            if (empty($curr->ID)) { continue; }
+            $price_data[] = [
+                'BatchID' => $this->batch_id,
+                'GameID'  => $curr->ID,
+                'Price'   => $row['salePrice']
+            ];
         }
+        PriceUsModel::insert($price_data);
+        unset($price_data, $de_duplicate);
         return true;
     }
 }

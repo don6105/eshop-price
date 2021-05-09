@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App;
 use Illuminate\Console\Command;
 
 class Game extends Command
@@ -11,14 +12,14 @@ class Game extends Command
      *
      * @var string
      */
-    protected $signature = 'game:crawl {country}';
+    protected $signature = 'game:crawl {country} {--schedule}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'game:crawl {country: us}';
+    protected $description = 'game:crawl {country: us} {--schedule}';
 
     /**
      * Create a new command instance.
@@ -37,19 +38,20 @@ class Game extends Command
      */
     public function handle()
     {
-        app('GameUs')->getGamePrice();
-        // $game_list = app('Translate')->getGameNameList();
-        print_r($this->argument());
+        echo 'Start crawl game(us) @ '.date('Y-m-d H:i:s').PHP_EOL;
+        
+        $game_us = App::make('GameUs');
+        if (!$this->option('schedule')) {
+            $game_us->setOutput($this->output);
+        }
+        $game_us->getGamePrice();
+        $this->info(PHP_EOL.'  game(us) crawler finished!');
 
-        // $slice_num = 10;
-        // $bar = $this->output->createProgressBar($slice_num);
-        // $bar->start();
-        // for ($i = 0; $i < $slice_num; ++$i) {
-        //     sleep(1);   // 模拟执行耗时任务
-        //     $bar->advance();
-        // } 
-        // $bar->finish();
-        // echo PHP_EOL;
+        echo 'End crawl game(us) @ '.date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
+
+        // $game_list = app('Translate')->getGameNameList();
+        // print_r($this->argument());
+        // print_r($this->options());
         return 0;
     }
 }

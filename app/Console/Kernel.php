@@ -24,7 +24,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        $log = storage_path().'/schedule.log';
+        $schedule->command('game:crawl us --schedule')
+            ->dailyAt('22:10')
+            ->withoutOverlapping(5)
+            ->appendOutputTo($log);
     }
 
     /**
