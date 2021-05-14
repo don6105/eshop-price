@@ -38,16 +38,19 @@ class Game extends Command
      */
     public function handle()
     {
-        echo 'Start crawl game(us) @ '.date('Y-m-d H:i:s').PHP_EOL;
-        
-        $game_us = App::make('GameUs');
-        if (!$this->option('schedule')) {
-            $game_us->setOutput($this->output);
-        }
-        $game_us->getGamePrice();
-        $this->info(PHP_EOL.'  game(us) crawler finished!');
+        if ($this->argument('country') === 'us') {
+            echo 'Start crawl game(us) @ '.date('Y-m-d H:i:s').PHP_EOL;
 
-        echo 'End crawl game(us) @ '.date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
+            $game_us = App::make('GameUs');
+            if (!$this->option('schedule')) {
+                $game_us->setOutput($this->output);
+            }
+            $game_us->getGamePrice();
+            $this->info(PHP_EOL.'  game(us) crawler finished!');
+
+            echo 'End crawl game(us) @ '.date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
+        }
+        
 
         // $game_list = app('Translate')->getGameNameList();
         // print_r($this->argument());
