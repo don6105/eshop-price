@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         \App\Console\Commands\Game::class,
+        \App\Console\Commands\Summary::class,
     ];
 
     /**
@@ -29,6 +30,9 @@ class Kernel extends ConsoleKernel
             ->dailyAt('22:10')
             ->withoutOverlapping(5)
             ->appendOutputTo($log);
+        $schedule->command('summary:sync us --schedule')
+            ->everyFiveMinutes()
+            ->withoutOverlapping(5);
     }
 
     /**

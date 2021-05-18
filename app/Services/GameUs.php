@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\GameUs as GameUsContract;
+use App\Services\Base as BaseService;
 use App\Models\Batch as BatchModel;
 use App\Models\GameUs as GameUsModel;
 use App\Models\PriceUs as PriceUsModel;
@@ -12,10 +13,10 @@ define('US_ALGOLIA_ID',  'U3B6GR4UA3');
 define('US_ALGOLIA_KEY', 'c4da8be7fd29f0f5bfa42920b0a99dc7');
 define('US_QUERY_URL',   'https://'.US_ALGOLIA_ID.'-dsn.algolia.net/1/indexes/*/queries');
 
-class GameUs implements GameUsContract
+class GameUs extends BaseService implements GameUsContract
 {
     private $num_per_page = 40;
-    private $output = null;
+
 
     public function __get($name)
     {
@@ -38,11 +39,6 @@ class GameUs implements GameUsContract
         }
     }
 
-    public function setOutput($output)
-    {
-        $this->output = $output;
-    }
-
     public function getGamePrice()
     {
         $header = $this->getHeader();
@@ -56,22 +52,6 @@ class GameUs implements GameUsContract
         }
     }
 
-    private function progressBar($sliceNum = 0)
-    {
-        static $bar, $count;
-        if (!isset($this->output)) { return false; }
-        if (isset($sliceNum) && !isset($bar)) {
-            $bar = $this->output->createProgressBar($sliceNum);
-            $bar->start();
-        }
-        if (isset($bar)) {
-            $bar->advance();
-            $count = isset($count)? $count+1 : 1;
-        }
-        if ($count == $sliceNum) {
-            $bar->finish();
-        }
-    }
 
     private function getQueryParam($page = 0)
     {
@@ -145,6 +125,7 @@ class GameUs implements GameUsContract
                 }
             }
         }
+        return null;
     }
 
     private function getTotalGamesNum(Array $response)
@@ -158,7 +139,7 @@ class GameUs implements GameUsContract
         $result = $response['results'][0]['hits'] ?? [];
         if (empty($result)) { return false; }
 
-        $game  = new GameUsModel();
+        $game         = new GameUsModel();
         $price_data   = [];
         $de_duplicate = [];
         foreach ($result as $row) {
@@ -184,7 +165,9 @@ class GameUs implements GameUsContract
                 'Player1'      => $row['playerFilters'] ?? [],
                 'Player2'      => $row['playerFilters'] ?? [],
                 'Player3'      => $row['playerFilters'] ?? [],
-                'Player4'      => $row['playerFilters'] ?? []
+                'Player4'      => $row['playerFilters'] ?? [],
+                'Sync'         => 0,
+                'UpdateTime'   => date('Y-m-d H:i:s')
             ];
             $game->insertOrUpdate($game_data);
             $curr = $game::firstWhere('Title', $row['title']);

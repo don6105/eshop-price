@@ -16,6 +16,12 @@ class GameUs extends Model
 
     protected $table      = 'game_us';
     protected $primaryKey = 'ID';
+    protected $guarded    = ['ID'];
+
+    public function price()
+    {
+        return $this->hasOne('App\Models\PriceUs', 'GameID')->latest('ID');
+    }
 
     public function setURLAttribute($value)
     {
@@ -73,5 +79,10 @@ class GameUs extends Model
     {
         $pattern = '4+';
         $this->attributes['Player4'] = in_array($pattern, $value)? 1 : 0;
+    }
+
+    public function scopeNotSync($query)
+    {
+        return $query->where('Sync', 0);
     }
 }

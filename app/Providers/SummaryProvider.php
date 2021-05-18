@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
-class CrawlProvider extends ServiceProvider
+class SummaryProvider extends ServiceProvider
 {
     /**
      * Register services.
@@ -13,8 +13,7 @@ class CrawlProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->bind('GameUs', 'App\Services\GameUs');
-        $this->app->bind('Translate', 'App\Services\Translate');
+        $this->app->bind('Summary', 'App\Services\Summary');
     }
 
     /**
