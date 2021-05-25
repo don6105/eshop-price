@@ -29,7 +29,8 @@ class Summary extends BaseService implements SummaryContract
                     'GameID'        => $game->ID ?? '',
                     'Country'       => $country,
                     'Boxart'        => $game->Boxart ?? '',
-                    'Price'         => $game->price->Price ?? '',
+                    'Price'         => $game->price->Price ?? 0.0,
+                    'MSRP'          => $game->MSRP ?? 0.0,
                     'Discount'      => $this->calcDiscount($game),
                     'IsLowestPrice' => $this->isLowestPrice($game),
                     'UpdateTime'    => date('Y-m-d H:i:s')
