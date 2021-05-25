@@ -18,22 +18,21 @@ class Summary extends BaseService implements SummaryContract
                 ->orderBy('ID', 'DESC')
                 ->first();
             if (empty($batch->ID)) { return false; }
-            $batch_id = $batch->ID;
 
             $model_name = '\\App\\Models\\Game'.ucfirst($country);
-            $games   = $model_name::with('price')->NotSync()->get();
+            $games   = $model_name::with('price')->NeedSync()->get();
             $summary = new SummaryModel();
             foreach ($games as $game) {
-                $discount  = floatval($game->price->Price) / floatval($game->MSRP) * 100;
                 $game_data = [
-                    'Title'        => $game->Title ?? '',
-                    'GroupID'      => 0,
-                    'GameID'       => $game->ID ?? '',
-                    'Country'      => $country,
-                    'Boxart'       => $game->Boxart ?? '',
-                    'Price'        => $game->price->Price ?? '',
-                    'Discount'     => round($discount),
-                    'UpdateTime'   => date('Y-m-d H:i:s')
+                    'Title'         => $game->Title ?? '',
+                    'GroupID'       => 0,
+                    'GameID'        => $game->ID ?? '',
+                    'Country'       => $country,
+                    'Boxart'        => $game->Boxart ?? '',
+                    'Price'         => $game->price->Price ?? '',
+                    'Discount'      => $this->calcDiscount($game),
+                    'IsLowestPrice' => $this->isLowestPrice($game),
+                    'UpdateTime'    => date('Y-m-d H:i:s')
                 ];
                 $summary->insertOrUpdate($game_data);
                 $game->Sync = 1;
@@ -43,5 +42,20 @@ class Summary extends BaseService implements SummaryContract
             return true;
         }
         return false;
+    }
+
+    private function isLowestPrice($game)
+    {
+        if (empty($game->price->Price)|| empty($game->LowestPrice)) {
+            return false;
+        }
+        return round($game->price->Price, 2) === round($game->LowestPrice, 2);
+    }
+
+    private function calcDiscount($game)
+    {
+        $discount = floatval($game->price->Price) / floatval($game->MSRP);
+        $discount = 1 - $discount;
+        return round($discount * 100);
     }
 }

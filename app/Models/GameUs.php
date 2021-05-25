@@ -81,7 +81,7 @@ class GameUs extends Model
         $this->attributes['Player4'] = in_array($pattern, $value)? 1 : 0;
     }
 
-    public function scopeNotSync($query)
+    public function scopeNeedSync($query)
     {
         return $query->where('Sync', 0);
     }
