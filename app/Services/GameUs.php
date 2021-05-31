@@ -7,7 +7,9 @@ use App\Services\Base as BaseService;
 use App\Models\Batch as BatchModel;
 use App\Models\GameUs as GameUsModel;
 use App\Models\PriceUs as PriceUsModel;
+use App\Libraries\Curl as CurlLib;
 use Illuminate\Support\Facades\Log;
+use voku\helper\HtmlDomParser;
 
 define('US_ALGOLIA_ID',  'U3B6GR4UA3');
 define('US_ALGOLIA_KEY', 'c4da8be7fd29f0f5bfa42920b0a99dc7');
@@ -49,6 +51,28 @@ class GameUs extends BaseService implements GameUsContract
             $is_save = $this->saveGamesData($data);
             $this->progressBar(ceil($total/$this->num_per_page));
             if (!$is_save) { break; }
+        }
+    }
+
+    public function getGameInfo()
+    {
+        $Curl      = new CurlLib();
+        $total_num = $this->getTodoGameInto(true);
+        while(count($todo_data = $this->getTodoGameInto()) > 0) {
+            foreach ($todo_data as $row) {
+                $response   = $Curl->run($row->URL);
+                $game_info  = $this->parseGameInfoPage($response);
+                $game_image = $this->parseGalleryImage($response);
+                $game_video = $this->parseGalleryVideo($response);
+                $game_info  = array_merge(
+                    $game_info, 
+                    $game_image, 
+                    $game_video,
+                    ['UpdateInfoTime' => date('Y-m-d H:i:s')]
+                );
+                GameUsModel::where('ID', $row->ID)->update($game_info);
+                $this->progressBar($total_num);
+            }
         }
     }
 
@@ -139,7 +163,7 @@ class GameUs extends BaseService implements GameUsContract
         $result = $response['results'][0]['hits'] ?? [];
         if (empty($result)) { return false; }
 
-        $game         = new GameUsModel();
+        $GameUs       = new GameUsModel();
         $price_data   = [];
         $de_duplicate = [];
         foreach ($result as $row) {
@@ -169,8 +193,8 @@ class GameUs extends BaseService implements GameUsContract
                 'Sync'         => 0,
                 'UpdateTime'   => date('Y-m-d H:i:s')
             ];
-            $game->insertOrUpdate($game_data);
-            $curr = $game::firstWhere('Title', $row['title']);
+            $GameUs->insertOrUpdate($game_data);
+            $curr = $GameUs::firstWhere('Title', $row['title']);
             $de_duplicate[ $row['title'] ] = true;
 
             if (empty($curr->ID)) { continue; }
@@ -183,5 +207,89 @@ class GameUs extends BaseService implements GameUsContract
         PriceUsModel::insert($price_data);
         unset($price_data, $de_duplicate);
         return true;
+    }
+
+    private function getTodoGameInto($getNum = false)
+    {
+        static $batch_id;
+        $batch_size = 500;
+        $batch_id   = $batch_id ?? 0;
+
+        $last_week = date('Y-m-d H:i:s', strtotime('-7 days'));
+        $orm = GameUsModel::where('UpdateInfoTime', '<', $last_week)
+            ->orWhereNull('UpdateInfoTime');
+        
+        if(!$getNum) {
+            $skip = $batch_id++ * $batch_size;
+            $r = $orm->skip($skip)->take($batch_size)->get()->toArray();
+        } else {
+            $r = $orm->count();
+        }
+        return $r;
+    }
+
+    private function parseGameInfoPage($response)
+    {
+        if (empty($response['content'])) {
+            return [];
+        }
+
+        $dom  = HtmlDomParser::str_get_html($response['content']);
+        $info = [
+            'GameSize'  => $dom->findOne('.file-size dd')->innertext,
+            // 'Languages' => $dom->findOne('.supported-languages dd')->innertext
+        ];
+
+        $playmode = [
+            '.playmode-tv'       => 'TVMode',
+            '.playmode-tabletop' => 'TabletopMode',
+            '.playmode-handheld' => 'HandheldMode'
+        ];
+        foreach ($playmode as $mode => $db_colum) {
+            $alt = $dom->findOne($mode.' img')->alt;
+            $info[$db_colum] = stripos($alt, 'not supported') === false ? 1 : 0; 
+        }
+        return $info;
+    }
+
+    private function parseGalleryVideo($response)
+    {
+        if (empty($response['content'])) {
+            return ['GalleryVideo' => ''];
+        }
+
+        $Curl = new CurlLib();
+        $dom  = HtmlDomParser::str_get_html($response['content']);
+        $url  = 'https://assets.nintendo.com/video/upload/sp_vp9_full_hd/v1/';
+        $url .= $dom->findOne('product-gallery [type="video"]')->getAttribute('video-id');
+        $url .= '.mpd';
+        $response = $Curl->run($url);
+        if (empty($response['content'])) {
+            ['GalleryVideo' => ''];
+        }
+
+        $pattern  = '/<baseurl>([^\n]+)<\/baseurl>/i';
+        $base_url = 'https://assets.nintendo.com';
+        $videos   = [];
+        if (preg_match_all($pattern, $response['content'], $m) > 0) {
+            $videos = array_filter($m[1], function($v) {
+                return stripos($v, 'h_720');
+            });
+            $videos = array_map(function($u) use ($base_url) {
+                return $base_url.$u;
+            }, $videos);
+        }
+        return ['GalleryVideo' => empty($videos) ? '' : implode(';;', $videos)];
+    }
+
+    private function parseGalleryImage($response)
+    {
+        if (empty($response['content'])) {
+            return ['GalleryImage' => ''];
+        }
+
+        $dom    = HtmlDomParser::str_get_html($response['content']);
+        $images = $dom->find('product-gallery [type="image"]')->src;
+        return ['GalleryImage' => empty($images) ? '' : implode(';;', $images)];
     }
 }

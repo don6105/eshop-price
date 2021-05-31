@@ -12,15 +12,15 @@ class Summary extends BaseService implements SummaryContract
     public function getGameData($country)
     {
         $country = empty($country)? '' : strtolower($country);
-        if (app()->bound('Game').ucfirst($country)) {
+        if (app()->bound('Game'.ucfirst($country))) {
             // get newest batch ID by language
             $batch = BatchModel::where('Country', $country)
                 ->orderBy('ID', 'DESC')
                 ->first();
             if (empty($batch->ID)) { return false; }
 
-            $model_name = '\\App\\Models\\Game'.ucfirst($country);
-            $games   = $model_name::with('price')->NeedSync()->get();
+            $model   = '\\App\\Models\\Game'.ucfirst($country);
+            $games   = $model::with('price')->NeedSync()->get();
             $summary = new SummaryModel();
             foreach ($games as $game) {
                 $game_data = [
