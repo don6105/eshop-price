@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Summary as SummaryModel;
 use App\Http\Resources\Summary as SummaryResource;
+use stdClass;
 
 class GameController extends Controller
 {
@@ -60,7 +61,18 @@ class GameController extends Controller
      */
     public function show($id)
     {
-        //
+        $summary_model = new SummaryModel();
+        $summary = $summary_model->where('ID', $id)->first();
+        if (empty($summary->Country)) {
+            return response()->json(['message' => 'ID not Found!'], 401);
+        }
+        if (!app()->bound('Game'.ucfirst($summary->Country))) {
+            return response()->json(['message' => 'Country not Found!'], 401);
+        }
+        
+        $model = '\\App\\Models\\Game'.ucfirst($summary->Country);
+        $games = $model::with('languages')->where('ID', $summary->GameID)->first();
+        return response()->json($games);
     }
 
     /**
