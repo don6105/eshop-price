@@ -31,7 +31,7 @@ class GameController extends Controller
                 $summary_data = $summary_data->orderBy($colum, $sort);
             }
         } else {
-            $summary_data = $summary_data->orderBy('ID', 'ASC');
+            $summary_data = $summary_data->orderBy('Discount', 'DESC');
         }
         // search game
         if (!empty($keyword)) {
