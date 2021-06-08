@@ -27,7 +27,7 @@ class Kernel extends ConsoleKernel
     {
         $log = storage_path().'/schedule.log';
         $schedule->command('game:crawl us --schedule')
-            ->dailyAt('22:10')
+            ->dailyAt('07:00')
             ->withoutOverlapping(5)
             ->appendOutputTo($log);
         $schedule->command('summary:sync us --schedule')

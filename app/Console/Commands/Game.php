@@ -12,7 +12,7 @@ class Game extends Command
      *
      * @var string
      */
-    protected $signature = 'game:crawl {country} {--schedule}';
+    protected $signature = 'game:crawl {country?} {--schedule}';
 
     /**
      * The console command description.
@@ -45,13 +45,17 @@ class Game extends Command
             if (!$this->option('schedule')) {
                 $game_us->setOutput($this->output);
             }
+            // get main info and price.
             $game_us->getGamePrice();
             $this->info(PHP_EOL.'  game(us) crawler finished!');
+            // get extend info(gallery, languages, gamesize).
+            $game_us->getGameInfo();
+            $this->info(PHP_EOL.'  game_ext(us) crawler finished!');
 
             echo 'End crawl game(us) @ '.date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
         }
-        
 
+        
         // $game_list = app('Translate')->getGameNameList();
         // print_r($this->argument());
         // print_r($this->options());
