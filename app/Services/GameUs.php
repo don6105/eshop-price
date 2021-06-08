@@ -57,8 +57,8 @@ class GameUs extends BaseService implements GameUsContract
     public function getGameInfo()
     {
         $Curl      = new CurlLib();
-        $total_num = $this->getTodoGameInto(true);
-        while(count($todo_data = $this->getTodoGameInto()) > 0) {
+        $total_num = $this->getTodoGameInfo(true);
+        while(count($todo_data = $this->getTodoGameInfo()) > 0) {
             foreach ($todo_data as $row) {
                 $response   = $Curl->run($row->URL);
                 $game_info  = $this->parseGameInfoPage($response);
@@ -209,19 +209,15 @@ class GameUs extends BaseService implements GameUsContract
         return true;
     }
 
-    private function getTodoGameInto($getNum = false)
+    private function getTodoGameInfo($getNum = false)
     {
-        static $batch_id;
-        $batch_size = 500;
-        $batch_id   = $batch_id ?? 0;
-
         $last_week = date('Y-m-d H:i:s', strtotime('-7 days'));
         $orm = GameUsModel::where('UpdateInfoTime', '<', $last_week)
             ->orWhereNull('UpdateInfoTime');
         
         if(!$getNum) {
-            $skip = $batch_id++ * $batch_size;
-            $r = $orm->skip($skip)->take($batch_size)->get()->toArray();
+            $batch_size = 500;
+            $r = $orm->take($batch_size)->get();
         } else {
             $r = $orm->count();
         }
@@ -234,10 +230,15 @@ class GameUs extends BaseService implements GameUsContract
             return [];
         }
 
-        $dom  = HtmlDomParser::str_get_html($response['content']);
-        $info = [
-            'GameSize'  => $dom->findOne('.file-size dd')->innertext,
-            // 'Languages' => $dom->findOne('.supported-languages dd')->innertext
+        $dom       = HtmlDomParser::str_get_html($response['content']);
+        $languages = $dom->findOne('.supported-languages dd')->innertext;
+        $languages = array_map('trim', explode(',', $languages));
+        $languages = array_map('strtolower', $languages);
+        $info      = [
+            'GameSize'        => $dom->findOne('.file-size dd')->innertext,
+            'SupportEnglish'  => in_array('english', $languages)?  1 : 0,
+            'SupportChinese'  => in_array('chinese', $languages)?  1 : 0,
+            'SupportJapanese' => in_array('japanese', $languages)? 1 : 0
         ];
 
         $playmode = [

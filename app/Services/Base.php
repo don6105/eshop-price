@@ -24,7 +24,7 @@ class Base implements BaseContract {
             $bar->advance();
             $count = isset($count)? $count+1 : 1;
         }
-        if ($count == $sliceNum) {
+        if (isset($bar) && $count == $sliceNum) {
             $bar->finish();
         }
     }
