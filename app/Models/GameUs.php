@@ -23,16 +23,6 @@ class GameUs extends Model
         return $this->hasOne('App\Models\PriceUs', 'GameID')->latest('ID');
     }
 
-    public function languages()
-    {
-        return $this->belongsToMany(
-            'App\Models\Language',
-            'game_language_relation',
-            'GameID',
-            'LanguageID'
-        )->where('Country', 'us');
-    }
-
     public function setURLAttribute($value)
     {
         $value = empty($value) ?: 'https://www.nintendo.com'.$value;
