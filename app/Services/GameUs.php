@@ -71,7 +71,7 @@ class GameUs extends BaseService implements GameUsContract
                     ['UpdateInfoTime' => date('Y-m-d H:i:s')]
                 );
                 GameUsModel::where('ID', $row->ID)->update($game_info);
-                $this->progressBar($total_num);
+                $this->progressBar($total_num, 1);
             }
         }
     }
@@ -174,7 +174,7 @@ class GameUs extends BaseService implements GameUsContract
                 'Title'        => $row['title'] ?? '',
                 'URL'          => $row['url'] ?? '',
                 'NSUID'        => $row['nsuid'] ?? '',
-                'Boxart'       => $row['boxart'] ?? '',
+                'Boxart'       => $row['horizontalHeaderImage'] ?? '',
                 'ReleaseDate'  => $row['releaseDateDisplay'] ?? '',
                 'NumOfPlayers' => $row['numOfPlayers'] ?? '',
                 'Genres'       => $row['genres'] ?? [],
