@@ -14,6 +14,7 @@ class CrawlProvider extends ServiceProvider
     public function register()
     {
         $this->app->bind('GameUs', 'App\Services\GameUs');
+        $this->app->bind('GameHk', 'App\Services\GameHk');
         $this->app->bind('Translate', 'App\Services\Translate');
     }
 

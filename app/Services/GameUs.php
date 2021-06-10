@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Contracts\GameUs as GameUsContract;
+use App\Contracts\Game as GameContract;
 use App\Services\Base as BaseService;
 use App\Models\Batch as BatchModel;
 use App\Models\GameUs as GameUsModel;
@@ -15,7 +15,7 @@ define('US_ALGOLIA_ID',  'U3B6GR4UA3');
 define('US_ALGOLIA_KEY', 'c4da8be7fd29f0f5bfa42920b0a99dc7');
 define('US_QUERY_URL',   'https://'.US_ALGOLIA_ID.'-dsn.algolia.net/1/indexes/*/queries');
 
-class GameUs extends BaseService implements GameUsContract
+class GameUs extends BaseService implements GameContract
 {
     private $num_per_page = 40;
 
@@ -71,7 +71,7 @@ class GameUs extends BaseService implements GameUsContract
                     ['UpdateInfoTime' => date('Y-m-d H:i:s')]
                 );
                 GameUsModel::where('ID', $row->ID)->update($game_info);
-                $this->progressBar($total_num, 1);
+                $this->progressBar($total_num);
             }
         }
     }
@@ -142,7 +142,6 @@ class GameUs extends BaseService implements GameUsContract
             if (!$error) {
                 $response_array = json_decode($response, true);
                 if (isset($response_array['results'][0])) {
-                    $result = $response_array['results'][0];
                     return $response_array;
                 } elseif($req_index === ($req_index - 1)) {
                     Log::error($response);
@@ -182,14 +181,7 @@ class GameUs extends BaseService implements GameUsContract
                 'NSO'          => $row['generalFilters'] ?? [],
                 'MSRP'         => $row['msrp'] ?? '0.0',
                 'LowestPrice'  => $row['lowestPrice'] ?? '0.0',
-                'PriceRange'   => $row['priceRange'] ?? '',
-                'Availability' => $row['availability'] ?? '',
-                'ObjectID'     => $row['objectID'] ?? '',
-                'Description'  => $row['description'] ?? '',
-                'Player1'      => $row['playerFilters'] ?? [],
-                'Player2'      => $row['playerFilters'] ?? [],
-                'Player3'      => $row['playerFilters'] ?? [],
-                'Player4'      => $row['playerFilters'] ?? [],
+                'Description'  => '',
                 'Sync'         => 0,
                 'UpdateTime'   => date('Y-m-d H:i:s')
             ];
@@ -230,15 +222,18 @@ class GameUs extends BaseService implements GameUsContract
             return [];
         }
 
-        $dom       = HtmlDomParser::str_get_html($response['content']);
-        $languages = $dom->findOne('.supported-languages dd')->innertext;
-        $languages = array_map('trim', explode(',', $languages));
-        $languages = array_map('strtolower', $languages);
-        $info      = [
-            'GameSize'        => $dom->findOne('.file-size dd')->innertext,
-            'SupportEnglish'  => in_array('english', $languages)?  1 : 0,
-            'SupportChinese'  => in_array('chinese', $languages)?  1 : 0,
-            'SupportJapanese' => in_array('japanese', $languages)? 1 : 0
+        $dom        = HtmlDomParser::str_get_html($response['content']);
+        $game_size  = $dom->findOne('.file-size dd')->innerText();
+        $langs      = $dom->findOne('.supported-languages dd')->innerText();
+        $langs      = array_map('trim', explode(',', $langs));
+        $langs      = array_map('strtolower', $langs);
+        $desc       = $dom->findOne('[itemprop="description"]')->innerHtml();
+        $info       = [
+            'GameSize'        => $game_size,
+            'Description'     => $desc,
+            'SupportEnglish'  => in_array('english',  $langs)? 1 : 0,
+            'SupportChinese'  => in_array('chinese',  $langs)? 1 : 0,
+            'SupportJapanese' => in_array('japanese', $langs)? 1 : 0
         ];
 
         $playmode = [
@@ -247,7 +242,7 @@ class GameUs extends BaseService implements GameUsContract
             '.playmode-handheld' => 'HandheldMode'
         ];
         foreach ($playmode as $mode => $db_colum) {
-            $alt = $dom->findOne($mode.' img')->alt;
+            $alt = $dom->findOne($mode.' img')->getAttribute('alt');
             $info[$db_colum] = stripos($alt, 'not supported') === false ? 1 : 0; 
         }
         return $info;
