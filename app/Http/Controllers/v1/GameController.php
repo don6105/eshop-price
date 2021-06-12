@@ -71,7 +71,7 @@ class GameController extends Controller
         }
         
         $model = '\\App\\Models\\Game'.ucfirst($summary->Country);
-        $games = $model::with('languages')->where('ID', $summary->GameID)->first();
+        $games = $model::where('ID', $summary->GameID)->first();
         return response()->json($games);
     }
 

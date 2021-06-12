@@ -12,7 +12,7 @@ class Summary extends Model
     public $incrementing = true;
     public $timestamps   = false;
 
-    protected $table      = 'game_summary';
+    protected $table      = 'summary';
     protected $primaryKey = 'ID';
     protected $fillable   = [''];
 }

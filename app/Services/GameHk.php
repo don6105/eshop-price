@@ -106,6 +106,7 @@ class GameHk extends BaseService implements GameContract
         foreach ($games as $game) {
             $price = $game['Price'];
             $game['Description'] = '';
+            $game['Sync']        = 0;
             $game['UpdateTime']  = date('Y-m-d H:i:s');
             unset($game['Price']);
             $GameHk->insertOrUpdate($game);

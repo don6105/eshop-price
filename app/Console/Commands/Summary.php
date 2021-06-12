@@ -38,17 +38,19 @@ class Summary extends Command
      */
     public function handle()
     {
-        if ($this->argument('country') === 'us') {
-            echo 'Start summary(us) @ '.date('Y-m-d H:i:s').PHP_EOL;
+        $country      = strtolower($this->argument('country'));
+        $summary_name = 'Game'.ucfirst($country);
+        if (!empty($country) && app()->bound($summary_name)) {
+            echo "Start summary({$country}) @ ".date('Y-m-d H:i:s').PHP_EOL;
 
             $summary = App::make('Summary');
             if (!$this->option('schedule')) {
                 $summary->setOutput($this->output);
             }
-            $summary->getGameData($this->argument('country'));
-            $this->info(PHP_EOL.'  summary(us) finished!');
+            $summary->getGameData($country);
+            $this->info(PHP_EOL." summary({$country}) finished.");
 
-            echo 'End summary(us) @ '.date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
+            echo "End summary({$country}) @ ".date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
         }
         return 0;
     }

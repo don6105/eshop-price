@@ -38,38 +38,26 @@ class Game extends Command
      */
     public function handle()
     {
-        if ($this->argument('country') === 'us') {
-            echo 'Start crawl game(us) @ '.date('Y-m-d H:i:s').PHP_EOL;
-
-            $game_us = App::make('GameUs');
+        $country      = strtolower($this->argument('country'));
+        $crawler_name = 'Game'.ucfirst($country);
+        if (!empty($country) && app()->bound($crawler_name)) {
+            echo "Start crawl game({$country}) @ ".date('Y-m-d H:i:s').PHP_EOL;
+            
+            $crawler = App::make($crawler_name);
             if (!$this->option('schedule')) {
-                $game_us->setOutput($this->output);
+                $crawler->setOutput($this->output);
             }
+
             # get main info and price.
-            $game_us->getGamePrice();
-            $this->info(PHP_EOL.'  game(us) crawler finished!');
+            $crawler->getGamePrice();
+            $this->info(PHP_EOL."  game({$country}) crawler finished.");
+
             # get extend info(gallery, languages, gamesize).
-            $game_us->getGameInfo();
-            $this->info(PHP_EOL.'  game_ext(us) crawler finished!');
+            $crawler->getGameInfo();
+            $this->info(PHP_EOL."  game_ext({$country}) crawler finished.");
 
-            echo 'End crawl game(us) @ '.date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
-        } elseif($this->argument('country') === 'hk') {
-            echo 'Start crawl game(hk) @ '.date('Y-m-d H:i:s').PHP_EOL;
-
-            $game_hk = App::make('GameHk');
-            if (!$this->option('schedule')) {
-                $game_hk->setOutput($this->output);
-            }
-            # get main info and price.
-            $game_hk->getGamePrice();
-            $this->info(PHP_EOL.'  game(hk) crawler finished!');
-            # get extend info(gallery, languages, gamesize).
-            $game_hk->getGameInfo();
-            $this->info(PHP_EOL.'  game_ext(hk) crawler finished!');
-
-            echo 'End crawl game(hk) @ '.date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
+            echo "End crawl game({$country}) @ ".date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
         }
-
         
         // $game_list = app('Translate')->getGameNameList();
         // print_r($this->argument());
