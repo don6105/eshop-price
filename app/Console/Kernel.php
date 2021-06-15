@@ -15,6 +15,7 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         \App\Console\Commands\Game::class,
         \App\Console\Commands\Summary::class,
+        \App\Console\Commands\Exchange::class,
     ];
 
     /**

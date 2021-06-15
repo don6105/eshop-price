@@ -55,9 +55,9 @@ class Summary extends BaseService implements SummaryContract
 
     private function calcDiscount($game)
     {
-        if (empty($game->MSRP)) { return 0; }
-        $discount = floatval($game->price->Price) / floatval($game->MSRP);
-        $discount = 1 - $discount;
+        $price    = floatval($game->price->Price);
+        $msrp     = floatval($game->MSRP);
+        $discount = empty($msrp)? 0 : 1 - ($price / $msrp);
         return round($discount * 100);
     }
 }

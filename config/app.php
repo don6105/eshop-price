@@ -177,6 +177,7 @@ return [
 
         App\Providers\CrawlProvider::class,
         App\Providers\SummaryProvider::class,
+        App\Providers\ExchangeProvider::class,
     ],
 
     /*
