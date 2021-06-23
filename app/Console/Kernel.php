@@ -31,14 +31,20 @@ class Kernel extends ConsoleKernel
             ->dailyAt('05:00')
             ->withoutOverlapping(5)
             ->appendOutputTo($log);
+
+        $schedule->command('game:crawl hk --schedule')
+            ->dailyAt('05:00')
+            ->withoutOverlapping(5)
+            ->appendOutputTo($log);
+
+        $schedule->command('exchange:pull')
+            ->dailyAt('05:00')
+            ->withoutOverlapping(5)
+            ->appendOutputTo($log);
+
         $schedule->command('summary:sync us --schedule')
             ->everyFiveMinutes()
             ->withoutOverlapping(5);
-
-        $schedule->command('game:crawl hk --schedule')
-            ->dailyAt('06:00')
-            ->withoutOverlapping(5)
-            ->appendOutputTo($log);
     }
 
     /**
