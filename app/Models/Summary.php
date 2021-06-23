@@ -14,5 +14,5 @@ class Summary extends Model
 
     protected $table      = 'summary';
     protected $primaryKey = 'ID';
-    protected $fillable   = [''];
+    protected $guarded    = ['ID'];
 }

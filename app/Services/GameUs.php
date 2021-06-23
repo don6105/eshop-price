@@ -93,7 +93,7 @@ class GameUs extends BaseService implements GameContract
         ];
 
         $param = new \stdClass();
-        $param->indexName = 'ncom_game_en_us_price_asc';
+        $param->indexName = 'ncom_game_en_us_release_des';
         $param->params    = http_build_query([
             'query'             => '',
             'hitsPerPage'       => $this->num_per_page,

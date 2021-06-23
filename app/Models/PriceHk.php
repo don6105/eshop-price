@@ -14,5 +14,5 @@ class PriceHk extends Model
 
     protected $table      = 'price_hk';
     protected $primaryKey = 'ID';
-    protected $fillable   = ['BatchID', 'GameID', 'Price'];
+    protected $guarded    = ['ID'];
 }

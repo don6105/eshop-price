@@ -7,7 +7,6 @@ use App\Models\Batch as BatchModel;
 use App\Models\GameHk as GameHkModel;
 use App\Models\PriceHk as PriceHkModel;
 use App\Libraries\Curl as CurlLib;
-use Illuminate\Support\Facades\Log;
 use voku\helper\HtmlDomParser;
 
 define('HK_PAGE_URL', 'https://store.nintendo.com.hk/games/all-released-games?product_list_order=release_date_asc');

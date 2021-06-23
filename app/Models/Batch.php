@@ -14,5 +14,5 @@ class Batch extends Model
 
     protected $table      = 'batch';
     protected $primaryKey = 'ID';
-    protected $fillable   = ['Country'];
+    protected $guarded    = ['ID'];
 }
