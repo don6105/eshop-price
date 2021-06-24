@@ -45,6 +45,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('summary:sync us --schedule')
             ->everyFiveMinutes()
             ->withoutOverlapping(5);
+        
+        $schedule->command('summary:sync hk --schedule')
+            ->everyFiveMinutes()
+            ->withoutOverlapping(5);
     }
 
     /**

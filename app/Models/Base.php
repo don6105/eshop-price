@@ -17,7 +17,7 @@ class Base extends Model {
      * @param array $value
      * @return bool
      */
-    public function insertOrUpdate(array $values, array $value = [])
+    public function insertOrUpdate(Array $values, Array $value = [])
     {
         /* call method if child object has set___Attribute(). */
         // modified by undersky.
@@ -68,7 +68,7 @@ class Base extends Model {
      * @param array $value
      * @return array
      */
-    private function prepareBindingsForInsertOrUpdate(array $values, array $value)
+    private function prepareBindingsForInsertOrUpdate(Array $values, Array $value)
     {
         // Merge array of bindings
         $bindings = array_merge_recursive($values, [$value]);

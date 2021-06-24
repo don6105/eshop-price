@@ -8,7 +8,6 @@ use App\Models\Batch as BatchModel;
 use App\Models\GameUs as GameUsModel;
 use App\Models\PriceUs as PriceUsModel;
 use App\Libraries\Curl as CurlLib;
-use Illuminate\Support\Facades\Log;
 use voku\helper\HtmlDomParser;
 
 define('US_ALGOLIA_ID',  'U3B6GR4UA3');
@@ -19,16 +18,18 @@ class GameUs extends BaseService implements GameContract
 {
     private $num_per_page = 40;
 
-
     public function __get($name)
     {
-        if ($name == 'batch_id') {
+        if ($name === 'batch_id') {
             $batch = new BatchModel();
             $batch->Country   = 'us';
             $batch->StartTime = date('Y-m-d H:i:s');
             $batch->save();
             $this->batch_id = $batch->getKey();
             return $this->batch_id;
+        } elseif ($name === 'Curl') {
+            $this->Curl = new CurlLib();
+            return $this->Curl;
         }
     }
 
@@ -44,10 +45,14 @@ class GameUs extends BaseService implements GameContract
     public function getGamePrice()
     {
         $header = $this->getHeader();
+        $total  = null;
         for ($page = 0; ;++$page) {
             $query   = $this->getQueryParam($page);
             $data    = $this->getGamesData($header, $query);
-            $total   = $this->getTotalGamesNum($data);
+            if (!isset($total)) {
+                $total   = $this->getTotalGamesNum($data);
+            }
+            $data    = $this->parseGamePriceData($data);
             $is_save = $this->saveGamesData($data);
             $this->progressBar(ceil($total/$this->num_per_page));
             if (!$is_save) { break; }
@@ -56,11 +61,11 @@ class GameUs extends BaseService implements GameContract
 
     public function getGameInfo()
     {
-        $Curl      = new CurlLib();
+        $this->Curl->setHeader(null);
         $total_num = $this->getTodoGameInfo(true);
         while(count($todo_data = $this->getTodoGameInfo()) > 0) {
             foreach ($todo_data as $row) {
-                $response   = $Curl->run($row->URL);
+                $response   = $this->Curl->run($row->URL);
                 $game_info  = $this->parseGameInfoPage($response);
                 $game_image = $this->parseGalleryImage($response);
                 $game_video = $this->parseGalleryVideo($response);
@@ -122,54 +127,28 @@ class GameUs extends BaseService implements GameContract
 
     private function getGamesData($header, $query)
     {
-        for ($req_index = 0; $req_index < 3; ++$req_index) {
-            $curl = curl_init();
-            curl_setopt_array($curl, [
-                CURLOPT_URL            => US_QUERY_URL,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING       => "",
-                CURLOPT_MAXREDIRS      => 10,
-                CURLOPT_TIMEOUT        => 30,
-                CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST  => "POST",
-                CURLOPT_HTTPHEADER     => $header,
-                CURLOPT_POSTFIELDS     => $query
-            ]);
-            $response = curl_exec($curl);
-            $error    = curl_error($curl);
-            curl_close($curl);
-
-            if (!$error) {
-                $response_array = json_decode($response, true);
-                if (isset($response_array['results'][0])) {
-                    return $response_array;
-                } elseif($req_index === ($req_index - 1)) {
-                    Log::error($response);
-                }
-            }
+        $this->Curl->setHeader($header);
+        $response = $this->Curl->run(US_QUERY_URL, 30, $query);
+        if (empty($response['content'])) {
+            return null;
         }
-        return null;
+        $result = json_decode($response['content'], true);
+        return $result['results'][0] ?? null;
     }
 
-    private function getTotalGamesNum(Array $response)
+    private function getTotalGamesNum(Array $data = null)
     {
-        $game_num = $response['results'][0]['nbHits'] ?? 0;
-        return $game_num;
+        return $data['nbHits'] ?? 0;
     }
 
-    private function saveGamesData(Array $response)
+    private function parseGamePriceData(Array $data = null)
     {
-        $result = $response['results'][0]['hits'] ?? [];
-        if (empty($result)) { return false; }
-
-        $GameUs       = new GameUsModel();
-        $price_data   = [];
-        $de_duplicate = [];
+        $result = $data['hits'] ?? [];
+        if (empty($result)) { return null; }
+        
+        $game_data = [];
         foreach ($result as $row) {
-            if (isset($row['title']) && isset($de_duplicate[ $row['title'] ])) {
-                continue;
-            }
-            $game_data = [
+            $game_data[] = [
                 'Title'        => $row['title'] ?? '',
                 'URL'          => $row['url'] ?? '',
                 'NSUID'        => $row['nsuid'] ?? '',
@@ -183,21 +162,34 @@ class GameUs extends BaseService implements GameContract
                 'LowestPrice'  => $row['lowestPrice'] ?? '0.0',
                 'Description'  => '',
                 'Sync'         => 0,
+                'Price'        => $row['salePrice'] ?? 0.0,
                 'UpdateTime'   => date('Y-m-d H:i:s')
             ];
-            $GameUs->insertOrUpdate($game_data);
-            $curr = $GameUs::firstWhere('Title', $row['title']);
-            $de_duplicate[ $row['title'] ] = true;
+        }
+        return $game_data;
+    }
 
+    private function saveGamesData(Array $gameData = null)
+    {
+        if (empty($gameData)) { return false; }
+
+        $GameUs     = new GameUsModel();
+        $price_data = [];
+        foreach ($gameData as $row) {
+            $price = $row['Price'];
+            unset($row['Price']);
+            $GameUs->insertOrUpdate($row);
+
+            $curr = $GameUs::firstWhere('Title', $row['Title']);
             if (empty($curr->ID)) { continue; }
             $price_data[] = [
                 'BatchID' => $this->batch_id,
                 'GameID'  => $curr->ID,
-                'Price'   => $row['salePrice']
+                'Price'   => $price
             ];
         }
         PriceUsModel::insert($price_data);
-        unset($price_data, $de_duplicate);
+        unset($price_data);
         return true;
     }
 
@@ -216,7 +208,7 @@ class GameUs extends BaseService implements GameContract
         return $r;
     }
 
-    private function parseGameInfoPage($response)
+    private function parseGameInfoPage(Array $response = null)
     {
         if (empty($response['content'])) {
             return [];
@@ -248,7 +240,7 @@ class GameUs extends BaseService implements GameContract
         return $info;
     }
 
-    private function parseGalleryVideo($response)
+    private function parseGalleryVideo(Array $response = null)
     {
         if (empty($response['content'])) {
             return ['GalleryVideo' => ''];
@@ -278,7 +270,7 @@ class GameUs extends BaseService implements GameContract
         return ['GalleryVideo' => empty($videos) ? '' : implode(';;', $videos)];
     }
 
-    private function parseGalleryImage($response)
+    private function parseGalleryImage(Array $response = null)
     {
         if (empty($response['content'])) {
             return ['GalleryImage' => ''];

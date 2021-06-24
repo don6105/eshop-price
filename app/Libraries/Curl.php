@@ -2,19 +2,30 @@
 namespace App\Libraries; 
 
 class Curl {
-    public function run($url, $timeout = 30, $data = null, $maxRequestNum = 2)
+    private $header;
+
+    public function run($url, $timeout = 30, $data = null, $maxRequestNum = 3)
     {
         $cookie_name = storage_path().'/cookie.cookie';
         $request_url = $url;
+        $header      = isset($this->header)? $this->header : $this->getHeader();
+        if (empty($data)) {
+            $post_fields = '';
+        } elseif (is_string($data)) {
+            $post_fields = $data;
+        } else {
+            $post_fields = http_build_query($data);
+        }
+        
         $option = [
             CURLOPT_VERBOSE          => 0,
             CURLOPT_RETURNTRANSFER   => 1,
             CURLOPT_FOLLOWLOCATION   => true,
             CURLOPT_HEADER           => false,
-            CURLOPT_HTTPHEADER       => $this->getHeader(),
+            CURLOPT_HTTPHEADER       => $header,
             CURLOPT_NOBODY           => false,
             CURLOPT_CUSTOMREQUEST    => empty($data)? 'GET' : 'POST',
-            CURLOPT_POSTFIELDS       => empty($data)? ''    : http_build_query($data),
+            CURLOPT_POSTFIELDS       => $post_fields,
             CURLOPT_SSL_VERIFYPEER   => false,
             CURLOPT_SSL_VERIFYHOST   => 2,
             CURLOPT_COOKIEFILE       => $cookie_name,
@@ -50,6 +61,10 @@ class Curl {
         return $result;
     }
 
+    public function setHeader(array $header = null)
+    {
+        $this->header = $header;
+    }
 
 
     private function getHeader()
