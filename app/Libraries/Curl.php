@@ -66,6 +66,23 @@ class Curl {
         $this->header = $header;
     }
 
+    public function isSuccess($response)
+    {
+        if (!empty($response['fail'])) {
+            return false;
+        }
+        if (!isset($response['http_code']) || !isset($response['content'])) {
+            return false;
+        }
+        if ($response['http_code'] >= 400) {
+            return false;
+        }
+        if (empty($response['content'])) {
+            return false;
+        }
+        return true;
+    }
+
 
     private function getHeader()
     {

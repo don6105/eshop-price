@@ -2,22 +2,20 @@
 
 namespace App\Services;
 
-use App\Contracts\Summary as SummaryContract;
-use App\Services\Base as BaseService;
-use App\Models\Batch as BatchModel;
-use App\Models\Summary as SummaryModel;
+use App\Models\Batch       as BatchModel;
+use App\Libraries\WikiGame as WikiGameLib;
+use App\Services\Base      as BaseService;
+use App\Models\Summary     as SummaryModel;
+use App\Contracts\Summary  as SummaryContract;
 
 class Summary extends BaseService implements SummaryContract
 {
-    public function getGameData($country)
+    public function syncGameInfo($country)
     {
         $country = empty($country)? '' : strtolower($country);
-        if (app()->bound('Game'.ucfirst($country))) {
-            // get newest batch ID by language
-            $batch = BatchModel::where('Country', $country)
-                ->orderBy('ID', 'DESC')
-                ->first();
-            if (empty($batch->ID)) { return false; }
+        if (class_exists('\\App\Models\\Game'.ucfirst($country))) {
+            $batch_id = $this->getLastBatchID($country);
+            if (empty($batch_id)) { return false; }
 
             $model   = '\\App\\Models\\Game'.ucfirst($country);
             $games   = $model::with('price')->NeedSync()->get();
@@ -45,6 +43,60 @@ class Summary extends BaseService implements SummaryContract
         return false;
     }
 
+    public function setGameGroup()
+    {
+        $WikiGame = new WikiGameLib();
+        $WikiGame->loadGameList();
+
+        $grouped = [];
+        $pending = $this->getSummaryData();
+        $pending = $this->formatGameName($pending);
+
+        $last     = end($pending);
+        $group_id = $last['GroupID']?? 0;
+        
+        while (true) {
+            $curr = array_shift($pending);
+            if (!isset($curr)) { break; }
+
+            $games = $WikiGame->findGameGroup($curr['Title']);
+            array_push($games, $curr['Title']);
+
+            foreach ($games as $game) {
+                $key = $this->findTitleInArray($grouped, $game);
+                if (isset($key)) {
+                    if ($grouped[$key]['GroupID'] == 0) {
+                        $grouped[$key]['GroupID'] = ++$group_id;
+                    }
+                    $curr['GroupID'] = $grouped[$key]['GroupID'];
+                    break;
+                }
+            }
+            array_push($grouped, $curr);
+        }
+        $grouped = array_filter($grouped, function($g) {
+            return !empty($g['GroupID']);
+        });
+        $order = ['us', 'hk']; // hk > us > other
+        usort($grouped, function($a, $b) use($order) {
+            if ($a['GroupID'] === $b['GroupID']) {
+                $a = array_search($a['Country'], $order);
+                $b = array_search($b['Country'], $order);
+                return $b - $a;
+            }
+            return $a['GroupID'] - $b['GroupID'];
+        });
+        dd($grouped);
+    }
+
+    private function getLastBatchID($country)
+    {
+        $batch = BatchModel::where('Country', $country)
+                ->orderBy('ID', 'DESC')
+                ->first();
+        return $batch->ID?: 0;
+    }
+
     private function isLowestPrice($game)
     {
         if (empty($game->price->Price)|| empty($game->LowestPrice)) {
@@ -55,9 +107,40 @@ class Summary extends BaseService implements SummaryContract
 
     private function calcDiscount($game)
     {
-        $price    = floatval($game->price->Price);
-        $msrp     = floatval($game->MSRP);
-        $discount = empty($msrp)? 0 : 1 - ($price / $msrp);
+        $price    = isset($game->price->Price);
+        $msrp     = isset($game->MSRP);
+        $discount = empty($msrp)? 0 : 1 - (floatval($price) / floatval($msrp));
         return round($discount * 100);
+    }
+
+    private function getSummaryData()
+    {
+        $data = SummaryModel::select('ID', 'Title','GroupID', 'OrderID', 'Country')
+                    ->orderBy('GroupID', 'ASC')
+                    ->get()
+                    ->toArray();
+        return $data;
+    }
+
+    private function formatGameName(Array $game):Array
+    {
+        if (empty($game)) { return []; }
+        foreach ($game as $key => $row) {
+            $row = str_replace(['™', '®'], '', $row);
+            $game[$key] = $row;
+        }
+        return $game;
+    }
+
+    private function findTitleInArray(Array $array, $title)
+    {
+        if (empty($array)) { return null; }
+
+        foreach ($array as $key => $row) {
+            if ($row['Title'] === $title) {
+                return $key;
+            }
+        }
+        return null;
     }
 }

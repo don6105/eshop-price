@@ -13,9 +13,10 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        \App\Console\Commands\Game::class,
-        \App\Console\Commands\Summary::class,
         \App\Console\Commands\Exchange::class,
+        \App\Console\Commands\GameCrawl::class,
+        \App\Console\Commands\SummarySync::class,
+        \App\Console\Commands\SummaryGroup::class,
     ];
 
     /**

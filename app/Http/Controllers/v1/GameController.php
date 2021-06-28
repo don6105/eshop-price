@@ -66,11 +66,11 @@ class GameController extends Controller
         if (empty($summary->Country)) {
             return response()->json(['message' => 'ID not Found!'], 401);
         }
-        if (!app()->bound('Game'.ucfirst($summary->Country))) {
+
+        $model = '\\App\\Models\\Game'.ucfirst($summary->Country);
+        if (!class_exists($model)) {
             return response()->json(['message' => 'Country not Found!'], 401);
         }
-        
-        $model = '\\App\\Models\\Game'.ucfirst($summary->Country);
         $games = $model::where('ID', $summary->GameID)->first();
         return response()->json($games);
     }

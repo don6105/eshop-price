@@ -31,9 +31,13 @@ class GameUs extends Model
 
     public function setReleaseDateAttribute($value)
     {
-        $timestamp = strtotime($value);
-        $datetime  = date('Y-m-d H:i:s', $timestamp);
-        $this->attributes['ReleaseDate'] = $datetime;
+        if (!empty($value)) {
+            $timestamp = strtotime($value);
+            $datetime  = date('Y-m-d H:i:s', $timestamp);
+            $this->attributes['ReleaseDate'] = $datetime;
+        } else {
+            $this->attributes['ReleaseDate'] = null;
+        }
     }
 
     public function setGenresAttribute($value)

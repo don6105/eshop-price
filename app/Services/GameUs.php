@@ -14,6 +14,11 @@ define('US_ALGOLIA_ID',  'U3B6GR4UA3');
 define('US_ALGOLIA_KEY', 'c4da8be7fd29f0f5bfa42920b0a99dc7');
 define('US_QUERY_URL',   'https://'.US_ALGOLIA_ID.'-dsn.algolia.net/1/indexes/*/queries');
 
+/*
+Algolia限制只能抓一千筆資料，eshop(us)網站也是一樣。
+you can only fetch the 1000 hits for this query. You can extend the number of hits returned via the paginationLimitedTo index parameter or use the browse method. You can read our FAQ for more details about browsing: https://www.algolia.com/doc/faq/index-configuration/how-can-i-retrieve-all-the-records-in-my-index 
+*/
+
 class GameUs extends BaseService implements GameContract
 {
     private $num_per_page = 40;
@@ -98,7 +103,7 @@ class GameUs extends BaseService implements GameContract
         ];
 
         $param = new \stdClass();
-        $param->indexName = 'ncom_game_en_us_release_des';
+        $param->indexName = 'ncom_game_en_us';
         $param->params    = http_build_query([
             'query'             => '',
             'hitsPerPage'       => $this->num_per_page,
@@ -107,7 +112,7 @@ class GameUs extends BaseService implements GameContract
             'analytics'         => 'false',
             'facets'            => json_encode($facets),
             'tagFilters'        => '',
-            'facetFilters'      => '[["generalFilters:Deals"],["platform:Nintendo Switch"]]'
+            'facetFilters'      => '[["availability:Available now"],["platform:Nintendo Switch"]]'
         ]);
 
         $request = new \stdClass();

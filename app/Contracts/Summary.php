@@ -4,5 +4,6 @@ namespace App\Contracts;
 
 interface Summary
 {
-    public function getGameData($country);
+    public function syncGameInfo($country);
+    public function setGameGroup();
 }

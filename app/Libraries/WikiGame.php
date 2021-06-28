@@ -1,59 +1,65 @@
 <?php
 
-namespace App\Services;
+namespace App\Libraries;
 
-use App\Contracts\Translate as TranslateContract;
+use App\Libraries\Curl as CurlLib;
+use voku\helper\HtmlDomParser;
 
-class Translate implements TranslateContract
+define('WIKI_URL', 'https://zh.wikipedia.org/wiki/%E4%BB%BB%E5%A4%A9%E5%A0%82Switch%E6%B8%B8%E6%88%8F%E5%88%97%E8%A1%A8');
+
+class WikiGame
 {
-    public function getGameNameList()
+    private $game_list = null;
+
+    public function loadGameList():Void
     {
         $html = $this->getGameNameListFromWiki();
         $list = $this->parseWikiPage($html);
-        return $list;
+        file_put_contents('/home/undersky/Desktop/debug.log', print_r($list, true));
+        $this->game_list = $list;
     }
 
-    private function getGameNameListFromWiki()
+    public function findGameGroup($game):Array
     {
-        for ($req_index = 0; $req_index < 3; ++$req_index) {
-            $curl = curl_init();
-            curl_setopt_array($curl, [
-                CURLOPT_URL            => 'https://zh.wikipedia.org/wiki/%E4%BB%BB%E5%A4%A9%E5%A0%82Switch%E6%B8%B8%E6%88%8F%E5%88%97%E8%A1%A8',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_ENCODING       => "",
-                CURLOPT_MAXREDIRS      => 10,
-                CURLOPT_TIMEOUT        => 30,
-                CURLOPT_CUSTOMREQUEST  => "GET",
-                CURLOPT_HTTPHEADER     => [
-                    'accept-language: zh-TW,zh;q=0.9,en;q=0.8'
-                ]
-            ]);
-            $response  = curl_exec($curl);
-            $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-            $error     = curl_error($curl);
-            curl_close($curl);
+        if (empty($this->game_list)) { return []; }
 
-            if ($http_code == 200) { return $response; }
+        foreach ($this->game_list as $group) {
+            if (array_search($game, $group) !== false) {
+                return $group;
+            }
         }
-        return '';
+        return [];
     }
 
-    private function parseWikiPage(String $html)
+    
+    private function getGameNameListFromWiki():String
     {
-        $dom = new \DOMDocument();
-        @$dom->loadHTML($html);
-        $finder     = new \DOMXPath($dom);
-        $class_name = 'wikitable';
-        $node_list  = $finder->query("//table[contains(@class, '$class_name')]/tbody/tr/td[1]");
-        $game_list  = [];
-        foreach ($node_list as $node) {
-            $td = $dom->saveHTML($node);
-            $td = explode('<br>', $td);
-            $game_names = [];
+        $cache = storage_path().'/wiki_game.cache';
+        if (file_exists($cache)) {
+            return file_get_contents($cache);
+        }
 
+        $Curl = new CurlLib();
+        $Curl->setHeader(['accept-language: zh-TW,zh;q=0.9,en;q=0.8']);
+        $response = $Curl->run(WIKI_URL);
+
+        if ($Curl->isSuccess($response)) {
+            file_put_contents($cache, $response['content']);
+        }
+        
+        return $Curl->isSuccess($response)? $response['content'] : '';
+    }
+
+    private function parseWikiPage(String $html):Array
+    {
+        $dom    = HtmlDomParser::str_get_html($html);
+        $target = $dom->find('table.wikitable tbody tr');
+        foreach ($target as $row) {
+            $td = trim($row->findOne('td')->innerHtml);
+            $td = explode('<br>', str_replace("\n", '<br>', $td));
+            if (reset($td) === 'e.g.格式名') { continue; }
+
+            $game_names = [];
             foreach ($td as $key => $value) {
                 if (!isset($td[$key])) { continue; }
 
@@ -68,24 +74,23 @@ class Translate implements TranslateContract
                         unset($td[$key+1]);
                     }
                 }
-
                 // merge to previous line if current str equals 'for Nintendo Switch'
                 if (strcasecmp($value, 'for Nintendo Switch') === 0) {
-                    $pre_key = array_keys($game_names);
-                    $pre_key = end($pre_key);
+                    $pre_key = array_key_last($game_names);
                     $game_names[$pre_key] .= ' '.$value;
                     continue;
                 }
-                
                 if(empty($value)) { continue; }
                 $game_names[] = $value;
             }
-            $game_list[] = array_unique($game_names);
+            $game_names = array_unique($game_names);
+            if (empty($game_names)) { continue; }
+            $game_list[] = $game_names;
         }
         return $game_list;
     }
 
-    private function getLanguage(String $str)
+    private function getLanguage(String $str):String
     {
         if (preg_match('/^[a-z0-9\s\-\.\(\),:;!]+$/i', $str) > 0) {
             return 'EN';
@@ -104,10 +109,11 @@ class Translate implements TranslateContract
         return '';
     }
 
-    private function formatGameName(String $str)
+    private function formatGameName(String $str):String
     {
         $str = trim(strip_tags($str));
         $str = htmlspecialchars_decode($str);
+        $str = str_replace(['™', '®'], '', $str);
         $str = preg_replace('/[\(（](.{3,}|暫名)[\)）]/iu', '', $str);
         $str = preg_replace('/\[\d+\]/iu', '', $str);
 
@@ -115,7 +121,6 @@ class Translate implements TranslateContract
         if (preg_match('/^[\(（]([^\)）]+)[\)）]$/iu', $str, $m) > 0) {
             $str = trim($m[1]);
         }
-
         return $str;
     }
 }

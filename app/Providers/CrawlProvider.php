@@ -13,9 +13,11 @@ class CrawlProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->bind('GameUs', 'App\Services\GameUs');
-        $this->app->bind('GameHk', 'App\Services\GameHk');
-        $this->app->bind('Translate', 'App\Services\Translate');
+        $this->app->bind('Game', function($app, $args) {
+            $country    = $args['country']?? '';
+            $class_name = '\\App\\Services\\Game'.ucfirst($country);
+            return class_exists($class_name)? new $class_name() : null;
+        });
     }
 
     /**

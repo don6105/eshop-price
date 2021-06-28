@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App;
 use Illuminate\Console\Command;
 
-class Summary extends Command
+class SummarySync extends Command
 {
     /**
      * The name and signature of the console command.
@@ -39,15 +39,15 @@ class Summary extends Command
     public function handle()
     {
         $country      = strtolower($this->argument('country'));
-        $summary_name = 'Game'.ucfirst($country);
-        if (!empty($country) && app()->bound($summary_name)) {
+        $summary_name = '\\App\Models\\Game'.ucfirst($country);
+        if (!empty($country) && class_exists($summary_name)) {
             echo "Start summary({$country}) @ ".date('Y-m-d H:i:s').PHP_EOL;
 
             $summary = App::make('Summary');
             if (!$this->option('schedule')) {
                 $summary->setOutput($this->output);
             }
-            $summary->getGameData($country);
+            $summary->syncGameInfo($country);
             $this->info(PHP_EOL." summary({$country}) finished.");
 
             echo "End summary({$country}) @ ".date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
