@@ -179,6 +179,7 @@ class Summary extends BaseService implements SummaryContract
         foreach ($groupList as $row) {
             $succ = SummaryModel::where('ID', $row['ID'])
                     ->where('IsManual', 0)
+                    ->where('GroupID', 0)
                     ->update([
                         'GroupID' => $row['GroupID'],
                         'OrderID' => $row['OrderID']
