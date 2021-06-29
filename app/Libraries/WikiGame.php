@@ -15,7 +15,6 @@ class WikiGame
     {
         $html = $this->getGameNameListFromWiki();
         $list = $this->parseWikiPage($html);
-        file_put_contents('/home/undersky/Desktop/debug.log', print_r($list, true));
         $this->game_list = $list;
     }
 
