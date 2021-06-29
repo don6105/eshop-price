@@ -40,7 +40,6 @@ class SummaryGroup extends Command
     {
         $Summary = App::make('Summary');
         $Summary->setGameGroup();
-        
         return 0;
     }
 }

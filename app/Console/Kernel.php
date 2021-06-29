@@ -32,7 +32,6 @@ class Kernel extends ConsoleKernel
             ->dailyAt('05:00')
             ->withoutOverlapping(5)
             ->appendOutputTo($log);
-
         $schedule->command('game:crawl hk --schedule')
             ->dailyAt('05:00')
             ->withoutOverlapping(5)
@@ -46,9 +45,12 @@ class Kernel extends ConsoleKernel
         $schedule->command('summary:sync us --schedule')
             ->everyFiveMinutes()
             ->withoutOverlapping(5);
-        
         $schedule->command('summary:sync hk --schedule')
             ->everyFiveMinutes()
+            ->withoutOverlapping(5);
+        
+        $schedule->command('summary:group --schedule')
+            ->hourly()
             ->withoutOverlapping(5);
     }
 
