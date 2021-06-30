@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,6 +16,10 @@ use Illuminate\Support\Facades\Route;
 // Route::middleware('auth:api')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
+
 Route::prefix('v1')->group(function () {
+    Route::post('/register', 'App\Http\Controllers\v1\AuthController@register');
+    Route::post('/login',    'App\Http\Controllers\v1\AuthController@login');
+
     Route::apiResource('game', 'App\Http\Controllers\v1\GameController');
 });
