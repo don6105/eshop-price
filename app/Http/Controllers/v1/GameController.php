@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Summary as SummaryModel;
 use App\Http\Resources\Summary as SummaryResource;
-use stdClass;
 
 class GameController extends Controller
 {
@@ -19,13 +18,13 @@ class GameController extends Controller
     {
         $page     = $request->input('page', 0);
         $per_page = $request->input('per_page', 40);
-        $keyword  = $request->input('keyword', '');
-        $order    = $request->input('order', '');
+        $q        = $request->input('q', '');
+        $sort     = $request->input('sort', '');
 
         $summary_model = new SummaryModel();
         $summary_data  = $summary_model->skip($page * $per_page)->take($per_page);
         // order
-        $order_by = $this->getOrderBy($order);
+        $order_by = $this->getOrderBy($sort);
         if (!empty($order_by)) {
             foreach ($order_by as $colum => $sort) {
                 $summary_data = $summary_data->orderBy($colum, $sort);
@@ -34,8 +33,8 @@ class GameController extends Controller
             $summary_data = $summary_data->orderBy('Discount', 'DESC');
         }
         // search game
-        if (!empty($keyword)) {
-            $summary_data = $summary_data->where('Title', 'like', "%${keyword}%");
+        if (!empty($q)) {
+            $summary_data = $summary_data->where('Title', 'like', "%${q}%");
         }
         // get format result
         $summary_data = new SummaryResource($summary_data->get());
@@ -98,13 +97,13 @@ class GameController extends Controller
         //
     }
 
-    private function getOrderBy($order)
+    private function getOrderBy($sort)
     {
-        if (empty($order)) { return ''; }
+        if (empty($sort)) { return ''; }
 
-        $order    = explode(',', $order);
+        $sort     = explode(',', $sort);
         $order_by = [];
-        foreach ($order as $row) {
+        foreach ($sort as $row) {
             if (preg_match('/(\S+)(?>\s+(\S+))?/i', $row, $m) > 0) {
                 $key   = $m[1];
                 $value = $m[2] ?? 'asc';
