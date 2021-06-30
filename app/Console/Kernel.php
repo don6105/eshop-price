@@ -30,16 +30,13 @@ class Kernel extends ConsoleKernel
         $log = storage_path().'/schedule.log';
         $schedule->command('game:crawl us --schedule')
             ->dailyAt('05:00')
-            ->withoutOverlapping(5)
             ->appendOutputTo($log);
         $schedule->command('game:crawl hk --schedule')
             ->dailyAt('05:00')
-            ->withoutOverlapping(5)
             ->appendOutputTo($log);
 
         $schedule->command('exchange:pull')
             ->dailyAt('05:00')
-            ->withoutOverlapping(5)
             ->appendOutputTo($log);
 
         $schedule->command('summary:sync us --schedule')
@@ -51,7 +48,7 @@ class Kernel extends ConsoleKernel
         
         $schedule->command('summary:group --schedule')
             ->hourly()
-            ->withoutOverlapping(5);
+            ->withoutOverlapping(30);
     }
 
     /**
