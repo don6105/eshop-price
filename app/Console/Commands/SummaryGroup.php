@@ -12,7 +12,7 @@ class SummaryGroup extends Command
      *
      * @var string
      */
-    protected $signature = 'summary:group';
+    protected $signature = 'summary:group {--schedule}';
 
     /**
      * The console command description.

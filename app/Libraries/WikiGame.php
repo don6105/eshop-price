@@ -33,11 +33,6 @@ class WikiGame
     
     private function getGameNameListFromWiki():String
     {
-        $cache = storage_path().'/wiki_game.cache';
-        if (file_exists($cache)) {
-            return file_get_contents($cache);
-        }
-
         $Curl = new CurlLib();
         $Curl->setHeader(['accept-language: zh-TW,zh;q=0.9,en;q=0.8']);
         $response = $Curl->run(WIKI_URL);

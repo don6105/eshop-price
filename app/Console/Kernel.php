@@ -40,15 +40,15 @@ class Kernel extends ConsoleKernel
             ->appendOutputTo($log);
 
         $schedule->command('summary:sync us --schedule')
-            ->everyFiveMinutes()
+            ->dailyAt('06:00')
             ->withoutOverlapping(5);
         $schedule->command('summary:sync hk --schedule')
-            ->everyFiveMinutes()
+            ->dailyAt('06:00')
             ->withoutOverlapping(5);
         
         $schedule->command('summary:group --schedule')
-            ->hourly()
-            ->withoutOverlapping(30);
+            ->everyTenMinutes()
+            ->withoutOverlapping(5);
     }
 
     /**
