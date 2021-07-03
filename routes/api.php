@@ -14,16 +14,18 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
 Route::prefix('v1')->group(function () {
-    Route::post('/register', 'App\Http\Controllers\v1\AuthController@register');
-    Route::post('/login',    'App\Http\Controllers\v1\AuthController@login');
-});
+    Route::post('/register', 'App\Http\Controllers\v1\PassportController@register');
+    Route::post('/login',    'App\Http\Controllers\v1\PassportController@login');
 
-
-Route::prefix('v1')->group(function () {
     Route::apiResource('game', 'App\Http\Controllers\v1\GameController');
+});
+
+Route::prefix('v1')->middleware('auth:api')->group(function () {
+    Route::post('logout', 'App\Http\Controllers\v1\PassportController@logout');
+
+    // for debug, it can be deleted.
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
 });
