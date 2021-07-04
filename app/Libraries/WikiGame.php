@@ -36,11 +36,6 @@ class WikiGame
         $Curl = new CurlLib();
         $Curl->setHeader(['accept-language: zh-TW,zh;q=0.9,en;q=0.8']);
         $response = $Curl->run(WIKI_URL);
-
-        if ($Curl->isSuccess($response)) {
-            file_put_contents($cache, $response['content']);
-        }
-        
         return $Curl->isSuccess($response)? $response['content'] : '';
     }
 
