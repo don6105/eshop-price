@@ -49,18 +49,26 @@ class GameUs extends BaseService implements GameContract
 
     public function getGamePrice()
     {
-        $header = $this->getHeader();
-        $total  = null;
-        for ($page = 0; ;++$page) {
-            $query   = $this->getQueryParam($page);
-            $data    = $this->getGamesData($header, $query);
-            if (!isset($total)) {
-                $total   = $this->getTotalGamesNum($data);
+        $header  = $this->getHeader();
+        $sort_by = [
+            'ncom_game_en_us',
+            'ncom_game_en_us_release_des',
+            'ncom_game_en_us_price_asc',
+            'ncom_game_en_us_price_des'
+        ];
+        foreach ($sort_by as $sort) {
+            $total = null;
+            for ($page = 0; ;++$page) {
+                $query   = $this->getQueryParam($page, $sort);
+                $data    = $this->getGamesData($header, $query);
+                if (!isset($total)) {
+                    $total = $this->getTotalGamesNum($data);
+                }
+                $data    = $this->parseGamePriceData($data);
+                $is_save = $this->saveGamesData($data);
+                $this->progressBar(ceil($total/$this->num_per_page));
+                if (!$is_save) { break; }
             }
-            $data    = $this->parseGamePriceData($data);
-            $is_save = $this->saveGamesData($data);
-            $this->progressBar(ceil($total/$this->num_per_page));
-            if (!$is_save) { break; }
         }
     }
 
@@ -87,7 +95,7 @@ class GameUs extends BaseService implements GameContract
     }
 
 
-    private function getQueryParam($page = 0)
+    private function getQueryParam($page = 0, $sort)
     {
         $facets = [
             "generalFilters",
@@ -103,7 +111,7 @@ class GameUs extends BaseService implements GameContract
         ];
 
         $param = new \stdClass();
-        $param->indexName = 'ncom_game_en_us';
+        $param->indexName = $sort;
         $param->params    = http_build_query([
             'query'             => '',
             'hitsPerPage'       => $this->num_per_page,
