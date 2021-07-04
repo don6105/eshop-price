@@ -36,14 +36,15 @@ class PassportController extends Controller
         $input = $request->all();
         $input['password'] = bcrypt($input['password']);
         $user  = UserModel::create($input);
+        $success['user']  =  $user->name;
         $success['token'] =  $user->createToken('eshop-price')->accessToken;
-        $success['name']  =  $user->name;
         return response()->json(['success' => $success], $this->succCode);
     }
 
     public function login(Request $request) {
         if(Auth::attempt($request->only(['email', 'password']))) {
             $user = Auth::user();
+            $success['user']  = $user->name;
             $success['token'] = $user->createToken('eshop-price')->accessToken;
             return response()->json(['success' => $success], $this->succCode);
         } else {
