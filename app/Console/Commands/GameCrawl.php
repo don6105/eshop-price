@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App;
 use Illuminate\Console\Command;
 
 class GameCrawl extends Command
@@ -40,24 +39,55 @@ class GameCrawl extends Command
     public function handle()
     {
         $country = strtolower($this->argument('country'));
-        $crawler = App::make('Game', ['country' => $country]);
-
         echo "Start crawl game({$country}) @ ".date('Y-m-d H:i:s').PHP_EOL;
-        if (isset($crawler)) {
-            if (!$this->option('schedule')) {
-                $crawler->setOutput($this->output);
-            }
-            # get main info and price.
-            $crawler->getGamePrice();
-            $this->info(PHP_EOL."  game({$country}) crawler finished.");
-            # get extend info(gallery, languages, gamesize).
-            $crawler->getGameInfo();
-            $this->info(PHP_EOL."  game_ext({$country}) crawler finished.");
-        } else {
+        
+        $this->getInstance()
+            ->setSchedule()
+            ->getWorkList()
+            ->runWorks();
+        
+        echo "End crawl game({$country}) @ ".date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
+        return 0;
+    }
+
+    private function getInstance()
+    {
+        $country       = strtolower($this->argument('country'));
+        $this->crawler = app()->make('Game', ['country' => $country]);
+        return $this;
+    }
+
+    private function setSchedule()
+    {
+        if (!empty($this->crawler) && !$this->option('schedule')) {
+            $this->crawler->setOutput($this->output);
+        }
+        return $this;
+    }
+
+    private function getWorkList()
+    {
+        if (!empty($this->crawler)) {
+            $interface    = class_implements($this->crawler);
+            $methods      = get_class_methods(array_pop($interface));
+            $finished_msg = array_map(function ($m) {
+                return PHP_EOL."  ".date('Y-m-d H:i:s')." $m() finished.";
+            }, $methods);
+            $this->work_list = array_combine($methods, $finished_msg);
+        }
+        return $this;
+    }
+
+    private function runWorks()
+    {
+        if (empty($this->crawler)) {
             echo 'Service not found.'.PHP_EOL;
         }
-        echo "End crawl game({$country}) @ ".date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
-
-        return 0;
+        if (!empty($this->work_list)) {
+            foreach ((Array)$this->work_list as $work => $msg) {
+                $this->crawler->$work();
+                $this->info($msg);
+            }
+        }
     }
 }
