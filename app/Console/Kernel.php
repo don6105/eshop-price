@@ -38,13 +38,6 @@ class Kernel extends ConsoleKernel
         $schedule->command('exchange:pull')
             ->dailyAt('05:00')
             ->appendOutputTo($log);
-
-        $schedule->command('summary:sync us --schedule')
-            ->dailyAt('06:00')
-            ->withoutOverlapping(5);
-        $schedule->command('summary:sync hk --schedule')
-            ->dailyAt('06:00')
-            ->withoutOverlapping(5);
         
         $schedule->command('summary:group --schedule')
             ->everyTenMinutes()

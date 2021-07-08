@@ -47,6 +47,12 @@ class GameCrawl extends Command
             ->runWorks();
         
         echo "End crawl game({$country}) @ ".date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
+
+        $this->call('summary:sync', [
+            'country'    => $country,
+            '--schedule' => $this->option('schedule')? true : false
+        ]);
+
         return 0;
     }
 
