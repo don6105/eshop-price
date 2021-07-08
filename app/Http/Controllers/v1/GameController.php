@@ -18,23 +18,28 @@ class GameController extends Controller
     {
         $page     = $request->input('page', 0);
         $per_page = $request->input('per_page', 40);
-        $q        = $request->input('q', '');
+        $query    = $request->input('q', '');
         $sort     = $request->input('sort', '');
 
         $summary_model = new SummaryModel();
-        $summary_data  = $summary_model->skip($page * $per_page)->take($per_page);
+        $summary_data  = $summary_model
+                            ->where('GroupID', '>', 0)
+                            ->where('OrderID', '1')
+                            ->skip($page * $per_page)
+                            ->take($per_page);
         // order
         $order_by = $this->getOrderBy($sort);
-        if (!empty($order_by)) {
+        if (empty($order_by)) {
+            $summary_data = $summary_data->orderBy('Discount', 'DESC');            
+        } else {
             foreach ($order_by as $colum => $sort) {
                 $summary_data = $summary_data->orderBy($colum, $sort);
             }
-        } else {
-            $summary_data = $summary_data->orderBy('Discount', 'DESC');
         }
         // search game
-        if (!empty($q)) {
-            $summary_data = $summary_data->where('Title', 'like', "%${q}%");
+        if (!empty($query)) {
+            $group_ids = $this->getQueryGroupID($query);
+            $summary_data = $summary_data->whereIn('GroupID', $group_ids);
         }
         // get format result
         $summary_data = new SummaryResource($summary_data->get());
@@ -58,10 +63,13 @@ class GameController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($groupID)
     {
         $summary_model = new SummaryModel();
-        $summary = $summary_model::with('game')->where('ID', $id)->first();
+        $summary = $summary_model::with('game')
+                    ->where('GroupID', $groupID)
+                    ->where('OrderID', 1)
+                    ->first();
         $game    = $summary->game;
         return response()->json($game);
     }
@@ -87,6 +95,17 @@ class GameController extends Controller
     public function destroy($id)
     {
         
+    }
+
+
+    private function getQueryGroupID($query)
+    {
+        $group_ids = SummaryModel::select('GroupID')
+            ->where('GroupID', '>', 0)
+            ->where('Title', 'LIKE', "%$query%")
+            ->get()
+            ->pluck('GroupID');
+        return $group_ids;
     }
 
     private function getOrderBy($sort)
