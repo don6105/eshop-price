@@ -21,15 +21,9 @@ class Base extends Model {
     {
         /* call method if child object has set___Attribute(). */
         // modified by undersky.
-        $methods = get_class_methods($this);
-        foreach ($values as $k => $v) {
-            $setAttr = "set{$k}Attribute";
-            if (in_array($setAttr, $methods)) {
-                $this->$setAttr($v);
-                $values[$k] = $this->attributes[$k];
-            }
-        }
         if (empty($value)) { $value = $values; }
+        $this->callSetAttribute($value);
+        $this->callSetAttribute($values);
         /* call method if child object has set___Attribute(). */
 
         $connection = $this->getConnection();          // 資料庫連結
@@ -45,6 +39,18 @@ class Base extends Model {
         $bindings = $this->prepareBindingsForInsertOrUpdate($values, $value);
         // 執行資料庫查詢
         return $connection->insert($query, $bindings);
+    }
+
+    private function callSetAttribute(&$data)
+    {
+        $methods = get_class_methods($this);
+        foreach ($data as $k => $v) {
+            $setAttr = "set{$k}Attribute";
+            if (in_array($setAttr, $methods)) {
+                $this->$setAttr($v);
+                $data[$k] = $this->attributes[$k];
+            }
+        }
     }
 
     /**

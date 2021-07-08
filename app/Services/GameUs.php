@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Arr;
 use App\Contracts\Game as GameContract;
 use App\Services\Base as BaseService;
 use App\Models\Batch as BatchModel;
@@ -191,7 +192,7 @@ class GameUs extends BaseService implements GameContract
         foreach ($gameData as $row) {
             $price = $row['Price'];
             unset($row['Price']);
-            $GameUs->insertOrUpdate($row);
+            $GameUs->insertOrUpdate($row, Arr::except($row, ['Description']));
 
             $curr = $GameUs::firstWhere('Title', $row['Title']);
             if (empty($curr->ID)) { continue; }
@@ -208,7 +209,7 @@ class GameUs extends BaseService implements GameContract
 
     private function getTodoGameInfo($getNum = false)
     {
-        $last_week = date('Y-m-d H:i:s', strtotime('-7 days'));
+        $last_week = date('Y-m-d H:i:s', strtotime('-3 days'));
         $orm = GameUsModel::where('UpdateInfoTime', '<', $last_week)
             ->orWhereNull('UpdateInfoTime');
         
@@ -227,20 +228,19 @@ class GameUs extends BaseService implements GameContract
             return [];
         }
 
-        $dom        = HtmlDomParser::str_get_html($response['content']);
-        $game_size  = $dom->findOne('.file-size dd')->innerText();
-        $langs      = $dom->findOne('.supported-languages dd')->innerText();
-        $langs      = array_map('trim', explode(',', $langs));
-        $langs      = array_map('strtolower', $langs);
-        $desc       = $dom->findOne('[itemprop="description"]')->innerHtml();
-        $info       = [
+        $dom       = HtmlDomParser::str_get_html($response['content']);
+        $game_size = $dom->findOne('.file-size dd')->innerText();
+        $langs     = $dom->findOne('.supported-languages dd')->innerText();
+        $langs     = array_map('trim', explode(',', $langs));
+        $langs     = array_map('strtolower', $langs);
+        $desc      = $dom->findOne('[itemprop="description"]')->innerHtml();
+        $info      = [
             'GameSize'        => $game_size,
             'Description'     => $desc,
             'SupportEnglish'  => in_array('english',  $langs)? 1 : 0,
             'SupportChinese'  => in_array('chinese',  $langs)? 1 : 0,
             'SupportJapanese' => in_array('japanese', $langs)? 1 : 0
         ];
-
         $playmode = [
             '.playmode-tv'       => 'TVMode',
             '.playmode-tabletop' => 'TabletopMode',

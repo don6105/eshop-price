@@ -61,17 +61,9 @@ class GameController extends Controller
     public function show($id)
     {
         $summary_model = new SummaryModel();
-        $summary = $summary_model->where('ID', $id)->first();
-        if (empty($summary->Country)) {
-            return response()->json(['message' => 'ID not Found!'], 401);
-        }
-
-        $model = '\\App\\Models\\Game'.ucfirst($summary->Country);
-        if (!class_exists($model)) {
-            return response()->json(['message' => 'Country not Found!'], 401);
-        }
-        $games = $model::where('ID', $summary->GameID)->first();
-        return response()->json($games);
+        $summary = $summary_model::with('game')->where('ID', $id)->first();
+        $game    = $summary->game;
+        return response()->json($game);
     }
 
     /**
@@ -83,7 +75,7 @@ class GameController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        
     }
 
     /**
@@ -94,7 +86,7 @@ class GameController extends Controller
      */
     public function destroy($id)
     {
-        //
+        
     }
 
     private function getOrderBy($sort)

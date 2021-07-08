@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services;
+use Illuminate\Support\Arr;
 use App\Contracts\Game as GameContract;
 use App\Services\Base as BaseService;
 use App\Models\Batch as BatchModel;
@@ -108,7 +109,7 @@ class GameHk extends BaseService implements GameContract
             $game['Sync']        = 0;
             $game['UpdateTime']  = date('Y-m-d H:i:s');
             unset($game['Price']);
-            $GameHk->insertOrUpdate($game);
+            $GameHk->insertOrUpdate($game, Arr::except($game, ['Description']));
 
             $curr = $GameHk::firstWhere('Title', $game['Title']);
             if (empty($curr->ID)) { continue; }
@@ -125,7 +126,7 @@ class GameHk extends BaseService implements GameContract
 
     private function getTodoGameInfo($getNum = false)
     {
-        $last_week = date('Y-m-d H:i:s', strtotime('-7 days'));
+        $last_week = date('Y-m-d H:i:s', strtotime('-3 days'));
         $orm = GameHkModel::where('UpdateInfoTime', '<', $last_week)
             ->orWhereNull('UpdateInfoTime');
         
