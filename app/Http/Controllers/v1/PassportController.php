@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 use App\Http\Controllers\Controller;
 use App\Models\User as UserModel;
+use Carbon\Carbon;
 
 class PassportController extends Controller
 {
@@ -36,16 +37,18 @@ class PassportController extends Controller
         $input = $request->all();
         $input['password'] = bcrypt($input['password']);
         $user  = UserModel::create($input);
-        $success['user']  =  $user->name;
-        $success['token'] =  $user->createToken('eshop-price')->accessToken;
+        $success['user']   = $user->name;
+        $success['token']  = $user->createToken('eshop-price')->accessToken;
+        $success['expire'] =  Carbon::now()->addHours(2)->toDateTimeString();
         return response()->json(['success' => $success], $this->succCode);
     }
 
     public function login(Request $request) {
         if(Auth::attempt($request->only(['email', 'password']))) {
             $user = Auth::user();
-            $success['user']  = $user->name;
-            $success['token'] = $user->createToken('eshop-price')->accessToken;
+            $success['user']   = $user->name;
+            $success['token']  = $user->createToken('eshop-price')->accessToken;
+            $success['expire'] =  Carbon::now()->addHours(2)->toDateTimeString();
             return response()->json(['success' => $success], $this->succCode);
         } else {
             return response()->json(['error' => 'Unauthorised'], 401);
