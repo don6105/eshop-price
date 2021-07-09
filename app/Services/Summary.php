@@ -7,7 +7,6 @@ use App\Libraries\WikiGame as WikiGameLib;
 use App\Services\Base      as BaseService;
 use App\Models\Summary     as SummaryModel;
 use App\Contracts\Summary  as SummaryContract;
-use Ramsey\Uuid\Type\Integer;
 
 class Summary extends BaseService implements SummaryContract
 {
@@ -24,7 +23,6 @@ class Summary extends BaseService implements SummaryContract
             foreach ($games as $game) {
                 $game_data = [
                     'Title'         => $game->Title ?? '',
-                    'GroupID'       => 0,
                     'GameID'        => $game->ID ?? '',
                     'Country'       => $country,
                     'Boxart'        => $game->Boxart ?? '',
@@ -179,7 +177,6 @@ class Summary extends BaseService implements SummaryContract
         foreach ($groupList as $row) {
             $succ = SummaryModel::where('ID', $row['ID'])
                     ->where('IsManual', 0)
-                    ->where('GroupID', 0)
                     ->update([
                         'GroupID' => $row['GroupID'],
                         'OrderID' => $row['OrderID']

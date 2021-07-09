@@ -53,11 +53,14 @@ class GameHk extends BaseService implements GameContract
                 $game_info  = $this->parseGameInfoPage($response);
                 $game_image = $this->parseGalleryImage($response);
                 $game_video = $this->parseGalleryVideo($response);
+                $game_price = $this->getHistoryPrice($row->ID);
                 $game_info  = array_merge(
                     $game_info, 
                     $game_image, 
                     $game_video,
-                    ['UpdateInfoTime' => date('Y-m-d H:i:s')]
+                    $game_price,
+                    ['Sync' => 0],
+                    ['UpdateInfoTime' => date('Y-m-d H:i:s')]  
                 );
                 GameHkModel::where('ID', $row->ID)->update($game_info);
                 $this->progressBar($total_num);
@@ -202,5 +205,14 @@ class GameHk extends BaseService implements GameContract
     {
         // maybe not exist video in hk eshop.
         return ['GalleryVideo' => ''];
+    }
+
+    private function getHistoryPrice($gameID)
+    {
+        $price = [
+            'MSRP'        => PriceHkModel::where('GameID', $gameID)->max('Price'),
+            'LowestPrice' => PriceHkModel::where('GameID', $gameID)->min('Price')
+        ];
+        return $price;
     }
 }
