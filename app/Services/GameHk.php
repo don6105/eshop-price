@@ -129,8 +129,8 @@ class GameHk extends BaseService implements GameContract
 
     private function getTodoGameInfo($getNum = false)
     {
-        $last_week = date('Y-m-d H:i:s', strtotime('-3 days'));
-        $orm = GameHkModel::where('UpdateInfoTime', '<', $last_week)
+        $last_check = date('Y-m-d H:i:s', strtotime('-8 hours'));
+        $orm = GameHkModel::where('UpdateInfoTime', '<', $last_check)
             ->orWhereNull('UpdateInfoTime');
         
         if(!$getNum) {

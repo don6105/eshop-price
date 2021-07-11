@@ -176,7 +176,7 @@ class GameUs extends BaseService implements GameContract
                 'LowestPrice'  => $row['lowestPrice'] ?? '0.0',
                 'Description'  => '',
                 'Sync'         => 0,
-                'Price'        => $row['salePrice'] ?? 0.0,
+                'Price'        => $row['salePrice'] ?? $row['msrp']?? 0.0,
                 'UpdateTime'   => date('Y-m-d H:i:s')
             ];
         }

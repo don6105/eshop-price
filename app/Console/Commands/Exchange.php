@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App;
 use Illuminate\Console\Command;
 
 class Exchange extends Command
@@ -38,7 +37,7 @@ class Exchange extends Command
      */
     public function handle()
     {
-        $Exchange = App::make('Exchange');
+        $Exchange = app()->make('Exchange');
         $Exchange->getExchangeRate();
         return 0;
     }
