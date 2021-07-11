@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,14 +17,9 @@ Route::prefix('v1')->group(function () {
     Route::post('/register', 'App\Http\Controllers\v1\PassportController@register');
     Route::post('/login',    'App\Http\Controllers\v1\PassportController@login');
 
-    Route::apiResource('game', 'App\Http\Controllers\v1\GameController');
+    Route::apiResource('summary', 'App\Http\Controllers\v1\SummaryController');
 });
 
 Route::prefix('v1')->middleware('auth:api')->group(function () {
     Route::post('logout', 'App\Http\Controllers\v1\PassportController@logout');
-
-    // for debug, it can be deleted.
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
 });

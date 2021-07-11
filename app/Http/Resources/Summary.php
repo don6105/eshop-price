@@ -2,9 +2,9 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Http\Resources\Json\JsonResource;
 
-class Summary extends ResourceCollection
+class Summary extends JsonResource
 {
     /**
      * Transform the resource collection into an array.
@@ -14,11 +14,21 @@ class Summary extends ResourceCollection
      */
     public function toArray($request)
     {
-        $data = parent::toArray($request);
-        foreach ($data as $key => $row) {
-            $data[$key]['Price'] = sprintf('%.2f', $row['Price']);
-            $data[$key]['MSRP']  = sprintf('%.2f', $row['MSRP']);
-        }
-        return $data;
+        $is_admin = (Bool)$request->input('admin', false);
+        return [
+            'GroupID'       => $this->GroupID,
+            'Title'         => $this->Title,
+            'Boxart'        => $this->Boxart,
+            'Country'       => $this->Country,
+            $this->mergeWhen(!$is_admin, [
+                'Discount'      => $this->Discount,
+                'IsLowestPrice' => $this->IsLowestPrice,
+                'Price'         => round($this->Price),
+                'MSRP'          => round($this->MSRP),
+            ]),
+            $this->mergeWhen($is_admin, [
+                'ID' => $this->ID
+            ]),
+        ];
     }
 }
