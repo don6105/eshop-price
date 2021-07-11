@@ -2,8 +2,7 @@
 
 namespace App\Contracts;
 
-interface Summary
+interface SummarySync
 {
     public function syncGameInfo($country);
-    public function setGameGroup();
 }

@@ -39,11 +39,6 @@ class Kernel extends ConsoleKernel
             ->dailyAt('05:00')
             ->appendOutputTo($log);
         
-        $schedule->command('summary:group --schedule')
-            ->everyTenMinutes()
-            ->withoutOverlapping(5);
-
-        
         // remove expired pasport token.
         $schedule->command('passport:purge')->hourly();
     }

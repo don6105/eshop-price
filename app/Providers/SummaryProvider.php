@@ -13,7 +13,8 @@ class SummaryProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->bind('Summary', 'App\Services\Summary');
+        $this->app->bind('SummarySync',  'App\Services\SummarySync');
+        $this->app->bind('SummaryGroup', 'App\Services\SummaryGroup');
     }
 
     /**

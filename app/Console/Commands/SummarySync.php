@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App;
 use Illuminate\Console\Command;
 
 class SummarySync extends Command
@@ -41,17 +40,30 @@ class SummarySync extends Command
         $country      = strtolower($this->argument('country'));
         $summary_name = '\\App\Models\\Game'.ucfirst($country);
         if (!empty($country) && class_exists($summary_name)) {
-            echo "Start summary({$country}) @ ".date('Y-m-d H:i:s').PHP_EOL;
+            echo "Start summary:sync {$country} @ ".date('Y-m-d H:i:s').PHP_EOL;
 
-            $summary = App::make('Summary');
+            $summary = app()->make('SummarySync');
             if (!$this->option('schedule')) {
                 $summary->setOutput($this->output);
             }
-            $summary->syncGameInfo($country);
+            $sync_num = $summary->syncGameInfo($country);
             $this->info(PHP_EOL." summary({$country}) finished.");
 
-            echo "End summary({$country}) @ ".date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
+            echo "End summary:sync {$country} @ ".date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
+
+            $this->callBack($sync_num);
         }
         return 0;
+    }
+
+
+    
+    private function callBack($syncNum)
+    {
+        if ($syncNum > 0) {
+            $this->call('summary:group', [
+                '--schedule' => $this->option('schedule')? true : false
+            ]);    
+        }
     }
 }

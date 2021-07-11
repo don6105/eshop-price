@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App;
 use Illuminate\Console\Command;
 
 class SummaryGroup extends Command
@@ -38,7 +37,7 @@ class SummaryGroup extends Command
      */
     public function handle()
     {
-        $Summary = App::make('Summary');
+        $Summary = app()->make('SummaryGroup');
         $Summary->setGameGroup();
         return 0;
     }
