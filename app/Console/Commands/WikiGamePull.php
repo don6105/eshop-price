@@ -4,21 +4,21 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 
-class Exchange extends Command
+class WikiGamePull extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'exchange:pull';
+    protected $signature = 'wikigame:pull';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Pull exchange rate and update to database';
+    protected $description = 'Pull wiki game list and update to database';
 
     /**
      * Create a new command instance.
@@ -37,8 +37,9 @@ class Exchange extends Command
      */
     public function handle()
     {
-        $Exchange = app()->make('Exchange');
-        $Exchange->getExchangeRate();
+        $WikiGame = app()->make('WikiGame');
+        $game_list = $WikiGame->getGameList();
+        $WikiGame->saveGameGroup($game_list);
         return 0;
     }
 }

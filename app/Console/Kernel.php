@@ -13,10 +13,11 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        \App\Console\Commands\Exchange::class,
         \App\Console\Commands\GameCrawl::class,
         \App\Console\Commands\SummarySync::class,
         \App\Console\Commands\SummaryGroup::class,
+        \App\Console\Commands\ExchangePull::class,
+        \App\Console\Commands\WikiGamePull::class,
     ];
 
     /**
@@ -28,14 +29,15 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $log = storage_path().'/schedule.log';
+
+        $schedule->command('exchange:pull')
+            ->dailyAt('04:30')
+            ->appendOutputTo($log);
+
         $schedule->command('game:crawl us --schedule')
             ->dailyAt('05:00')
             ->appendOutputTo($log);
         $schedule->command('game:crawl hk --schedule')
-            ->dailyAt('05:00')
-            ->appendOutputTo($log);
-
-        $schedule->command('exchange:pull')
             ->dailyAt('05:00')
             ->appendOutputTo($log);
         

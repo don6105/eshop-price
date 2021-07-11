@@ -2,18 +2,33 @@
 
 namespace App\Services;
 
-use App\Libraries\WikiGame     as WikiGameLib;
+use Illuminate\Support\Facades\Artisan;
 use App\Services\Base          as BaseService;
 use App\Models\Summary         as SummaryModel;
+use App\Models\WikiGame        as WikiGameModel;
 use App\Contracts\SummaryGroup as SummaryGroupContract;
 
 class SummaryGroup extends BaseService implements SummaryGroupContract
 {
+    public function __get($value)
+    {
+        if (strcasecmp($value, 'wiki_game') === 0) {
+            $this->wiki_game = $this->loadGameGroup(false);
+            
+            // pull from wiki website & reload
+            if(empty($this->wiki_game)) {
+                Artisan::call('wikigame:pull');
+                $this->wiki_game = $this->loadGameGroup(true);
+            }
+            return $this->wiki_game;
+        }
+    }
+
     public function setGameGroup():Int
     {
         $pending    = $this->getSummaryData();
         $pending    = $this->formatGameName($pending);
-        $group_list = $this->findGameGroup($pending);
+        $group_list = $this->computeGameGroup($pending);
         $group_list = $this->filterGroupList($group_list);
         $group_list = $this->sortGroupList($group_list);
         $group_list = $this->assignOrderID($group_list);
@@ -22,6 +37,31 @@ class SummaryGroup extends BaseService implements SummaryGroupContract
     }
 
 
+
+    private function loadGameGroup(Bool $refresh = false):Array
+    {
+        $game_list = WikiGameModel::get();
+        if ($refresh) { $game_list->fresh(); }
+        if (empty($game_list)) { return []; }
+
+        $wiki_game = [];
+        foreach ($game_list as $row) {
+            $group_id = $row['GroupID'];
+            $wiki_game[$group_id]   = $wiki_game[$group_id]?? [];
+            $wiki_game[$group_id][] = $row['Title'];
+        }
+        return $wiki_game;
+    }
+
+    private function findGameGroup(String $game):Array
+    {
+        foreach ($this->wiki_game as $group) {
+            if (array_search($game, $group) !== false) {
+                return $group;
+            }
+        }
+        return [];
+    }
 
     private function getSummaryData():Array
     {
@@ -42,11 +82,8 @@ class SummaryGroup extends BaseService implements SummaryGroupContract
         return $game;
     }
 
-    private function findGameGroup(Array $pendingList):Array
+    private function computeGameGroup(Array $pendingList):Array
     {
-        $WikiGame = new WikiGameLib();
-        $WikiGame->loadGameList();
-
         $group_list = [];
         $last       = end($pendingList);
         $group_id   = $last['GroupID']?? 0;
@@ -55,7 +92,7 @@ class SummaryGroup extends BaseService implements SummaryGroupContract
             $curr = array_shift($pendingList);
             if (!isset($curr)) { break; }
 
-            $games = $WikiGame->findGameGroup($curr['Title']);
+            $games = $this->findGameGroup($curr['Title']);
             array_push($games, $curr['Title']);
 
             foreach ($games as $game) {

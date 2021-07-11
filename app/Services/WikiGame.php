@@ -1,37 +1,47 @@
 <?php
 
-namespace App\Libraries;
+namespace App\Services;
 
 use App\Libraries\Curl as CurlLib;
+use App\Models\WikiGame as WikiGameModel;
+use App\Contracts\WikiGame as WikiGameContract;
 use voku\helper\HtmlDomParser;
 
 define('WIKI_URL', 'https://zh.wikipedia.org/wiki/%E4%BB%BB%E5%A4%A9%E5%A0%82Switch%E6%B8%B8%E6%88%8F%E5%88%97%E8%A1%A8');
 
-class WikiGame
+class WikiGame implements WikiGameContract
 {
-    private $game_list = null;
-
-    public function loadGameList():Void
+    public function getGameList():Array
     {
-        $html = $this->getGameNameListFromWiki();
+        $html = $this->getGameListFromWiki();
         $list = $this->parseWikiPage($html);
-        $this->game_list = $list;
+        return $list;
     }
 
-    public function findGameGroup($game):Array
+    public function saveGameGroup(Array $gameList):Int
     {
-        if (empty($this->game_list)) { return []; }
-
-        foreach ($this->game_list as $group) {
-            if (array_search($game, $group) !== false) {
-                return $group;
+        $save_num  = 0;
+        $wiki_data = [];
+        $wiki_game = new WikiGameModel();
+        $wiki_game->truncate();
+        
+        foreach ($gameList as $index => $group) {
+            if(empty($group) || !is_array($group)) { continue; }
+            foreach ($group as $title) {
+                $wiki_data[] = [
+                    'GroupID' => $index + 1,
+                    'Title'   => $title
+                ];
+                ++$save_num;
             }
         }
-        return [];
+        $wiki_game->insert($wiki_data);
+        return $save_num;
     }
 
+
     
-    private function getGameNameListFromWiki():String
+    private function getGameListFromWiki():String
     {
         $Curl = new CurlLib();
         $Curl->setHeader(['accept-language: zh-TW,zh;q=0.9,en;q=0.8']);
