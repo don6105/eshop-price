@@ -44,7 +44,7 @@ class SummaryPrice extends BaseService implements SummaryPriceContract
     
     private function getSummaryGroup(Int $groupID):Array
     {
-        $summarys = SummaryModel::select('GroupID', 'Country', 'Price', 'MSRP')
+        $summarys = SummaryModel::select('GroupID', 'Country', 'Price', 'MSRP', 'LowestPrice')
                         ->where('GroupID', $groupID)
                         ->get()
                         ->keyBy('Country')
@@ -58,23 +58,26 @@ class SummaryPrice extends BaseService implements SummaryPriceContract
             // init if var is null.
             $min_country  = $min_country?? $summary['Country'];
             $min_price    = $min_price?? $summary['Price'];
+            $min_lowest   = $min_lowest?? $summary['LowestPrice'];
             $min_msrp     = $min_msrp?? 0;
             $min_discount = $min_discount?? 0;
+            
             
             // compare
             if ($min_price > $summary['Price']) {
                 $min_country  = $summary['Country'];
-                $min_price    = round($summary['Price']);
-                $min_msrp     = round($summary['MSRP']);
+                $min_price    = $summary['Price'];
+                $min_lowest   = $summary['LowestPrice'];
+                $min_msrp     = $summary['MSRP'];
                 $min_discount = $this->getDiscount($summary['Price'], $summary['MSRP']);
             }
         }
         $result = [
-            'MinCountry'    => $min_country,
-            'MinPrice'      => $min_price,
-            'MinMSRP'       => $min_msrp,
-            'MinDiscount'   => $min_discount,
-            'IsLowestPrice' => ($min_price == $min_msrp)? 1 : 0,
+            'GroupCountry'    => $min_country,
+            'GroupPrice'      => $min_price,
+            'GroupMSRP'       => $min_msrp,
+            'GroupDiscount'   => $min_discount,
+            'IsLowestPrice' => $this->isLowestPrice($min_price, $min_msrp, $min_lowest),
             'IsGroupPrice'  => 1
         ];
         return $result;
@@ -86,6 +89,14 @@ class SummaryPrice extends BaseService implements SummaryPriceContract
         $msrp     = floatval($msrp);
         $discount = $msrp > 0? ($price / $msrp) * 100 : 100;
         return round(100 - $discount);
+    }
+
+    private function isLowestPrice($price, $msrp, $lowest):Bool
+    {
+        $price  = round($price);
+        $msrp   = round($msrp);
+        $lowest = round($lowest);
+        return ($price == $lowest && $msrp > $lowest)? 1 : 0;
     }
 
     private function saveGroupPrice(Int $groupID, Array $groupPrice)
