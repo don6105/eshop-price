@@ -3,8 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Contracts\Support\DeferrableProvider;
 
-class ExchangeProvider extends ServiceProvider
+class ExchangeProvider extends ServiceProvider implements DeferrableProvider
 {
     /**
      * Register services.
@@ -13,7 +14,7 @@ class ExchangeProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->bind('Exchange', 'App\Services\Exchange');
+        $this->app->bind('ExchangePull', 'App\Services\ExchangePull');
     }
 
     /**
@@ -24,5 +25,15 @@ class ExchangeProvider extends ServiceProvider
     public function boot()
     {
         //
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return [ExchangePull::class];
     }
 }

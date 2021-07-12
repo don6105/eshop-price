@@ -3,8 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Contracts\Support\DeferrableProvider;
 
-class CrawlProvider extends ServiceProvider
+class CrawlProvider extends ServiceProvider implements DeferrableProvider
 {
     /**
      * Register services.
@@ -28,5 +29,15 @@ class CrawlProvider extends ServiceProvider
     public function boot()
     {
         //
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return [Game::class];
     }
 }

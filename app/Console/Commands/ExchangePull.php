@@ -37,7 +37,7 @@ class ExchangePull extends Command
      */
     public function handle()
     {
-        $Exchange = app()->make('Exchange');
+        $Exchange = app()->make('ExchangePull');
         $Exchange->getExchangeRate();
         return 0;
     }

@@ -9,7 +9,7 @@ use voku\helper\HtmlDomParser;
 
 define('WIKI_URL', 'https://zh.wikipedia.org/wiki/%E4%BB%BB%E5%A4%A9%E5%A0%82Switch%E6%B8%B8%E6%88%8F%E5%88%97%E8%A1%A8');
 
-class WikiGame implements WikiGameContract
+class WikiGamePull implements WikiGameContract
 {
     public function getGameList():Array
     {

@@ -3,8 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Contracts\Support\DeferrableProvider;
 
-class WikiGameProvider extends ServiceProvider
+class WikiGameProvider extends ServiceProvider implements DeferrableProvider
 {
     /**
      * Register services.
@@ -13,7 +14,7 @@ class WikiGameProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->bind('WikiGame', 'App\Services\WikiGame');
+        $this->app->bind('WikiGamePull', 'App\Services\WikiGamePull');
     }
 
     /**
@@ -24,5 +25,15 @@ class WikiGameProvider extends ServiceProvider
     public function boot()
     {
         //
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return [WikiGamePull::class];
     }
 }

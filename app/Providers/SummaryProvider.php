@@ -3,8 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Contracts\Support\DeferrableProvider;
 
-class SummaryProvider extends ServiceProvider
+class SummaryProvider extends ServiceProvider implements DeferrableProvider
 {
     /**
      * Register services.
@@ -25,5 +26,15 @@ class SummaryProvider extends ServiceProvider
     public function boot()
     {
         //
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return [SummarySync::class, SummaryGroup::class];
     }
 }

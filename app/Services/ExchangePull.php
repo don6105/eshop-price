@@ -8,7 +8,7 @@ use App\Libraries\Curl as CurlLib;
 use App\Models\Exchange as ExchangeModel;
 use voku\helper\HtmlDomParser;
 
-class Exchange extends BaseService implements ExchangeContract
+class ExchangePull extends BaseService implements ExchangeContract
 {
     private $exchange_url         = 'https://rate.bot.com.tw/xrt';
     private $country_currency_url = 'https://www.ups.com/worldshiphelp/WSA/ENG/AppHelp/mergedProjects/CORE/Codes/Country_Territory_and_Currency_Codes.htm';

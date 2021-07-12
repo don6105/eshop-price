@@ -37,7 +37,7 @@ class WikiGamePull extends Command
      */
     public function handle()
     {
-        $WikiGame = app()->make('WikiGame');
+        $WikiGame = app()->make('WikiGamePull');
         $game_list = $WikiGame->getGameList();
         $WikiGame->saveGameGroup($game_list);
         return 0;
