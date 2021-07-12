@@ -13,13 +13,21 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::prefix('v1')->group(function () {
-    Route::post('/register', 'App\Http\Controllers\v1\PassportController@register');
-    Route::post('/login',    'App\Http\Controllers\v1\PassportController@login');
+use App\Http\Controllers\v1\PassportController as Passport;
+use App\Http\Controllers\v1\WikiGameController as WikiGame;
+use App\Http\Controllers\v1\SummaryController  as Summary;
 
-    Route::apiResource('summary', 'App\Http\Controllers\v1\SummaryController');
+Route::prefix('v1')->group(function () {
+    Route::post('register', [Passport::class, 'register']);
+    Route::post('login',    [Passport::class, 'login']);
+
+    Route::get('wikigame',  [WikiGame::class, 'index']);
+
+    Route::get('summary',           [Summary::class, 'index']);
+    Route::get('summary/{groupID}', [Summary::class, 'show']);
 });
 
 Route::prefix('v1')->middleware('auth:api')->group(function () {
-    Route::post('logout', 'App\Http\Controllers\v1\PassportController@logout');
+    Route::post('logout', [Passport::class, 'logout']);
+    Route::match(['put', 'patch'], 'summary/{groupID}', [Summary::class, 'update']);
 });

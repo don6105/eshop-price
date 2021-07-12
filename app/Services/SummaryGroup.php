@@ -66,7 +66,7 @@ class SummaryGroup extends BaseService implements SummaryGroupContract
     private function getSummaryData():Array
     {
         $data = SummaryModel::select('ID', 'Title','GroupID', 'OrderID', 'Country')
-                    ->orderBy('GroupID', 'ASC')
+                    ->orderBy('GroupID', 'DESC')
                     ->get()
                     ->toArray();
         return $data;
@@ -92,9 +92,15 @@ class SummaryGroup extends BaseService implements SummaryGroupContract
             $curr = array_shift($pendingList);
             if (!isset($curr)) { break; }
 
-            $games = $this->findGameGroup($curr['Title']);
-            array_push($games, $curr['Title']);
+            // keep it original GroupID.
+            if (!empty($curr['GroupID'])) {
+                array_push($group_list, $curr);
+                continue;
+            }
 
+            // find game's names from the group of wiki_game.
+            $games = $this->findGameGroup($curr['Title']);
+            array_unshift($games, $curr['Title']);
             foreach ($games as $game) {
                 $key = $this->findTitleInArray($group_list, $game);
                 if (isset($key)) {

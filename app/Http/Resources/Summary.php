@@ -14,20 +14,20 @@ class Summary extends JsonResource
      */
     public function toArray($request)
     {
-        $is_admin = (Bool)$request->input('admin', false);
+        $grouped = intval($request->input('grouped', 0));
         return [
             'GroupID'       => $this->GroupID,
             'Title'         => $this->Title,
             'Boxart'        => $this->Boxart,
             'Country'       => $this->Country,
-            $this->mergeWhen(!$is_admin, [
+            $this->mergeWhen($grouped === 0, [
                 'GroupCountry'    => $this->GroupCountry,
                 'GroupPrice'      => round($this->GroupPrice),
                 'GroupMSRP'       => round($this->GroupMSRP),
                 'GroupDiscount'   => round($this->GroupDiscount),
                 'IsLowestPrice' => $this->IsLowestPrice,
             ]),
-            $this->mergeWhen($is_admin, [
+            $this->mergeWhen($grouped > 0, [
                 'ID' => $this->ID
             ]),
         ];

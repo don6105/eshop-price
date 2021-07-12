@@ -21,8 +21,8 @@ class SummaryController extends Controller
      */
     public function index(Request $request)
     {
-        $query    = $request->input('query', '');
-        $sort     = $request->input('sort', '');
+        $query    = strval($request->input('query', ''));
+        $sort     = strval($request->input('sort', ''));
         $page     = intval($request->input('page', 0));
         $per_page = intval($request->input('per_page', 40));
         $grouped  = intval($request->input('grouped', 0));
@@ -42,17 +42,6 @@ class SummaryController extends Controller
         // dd(\DB::getQueryLog());
         
         return response()->json($data);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
     }
 
     /**
@@ -78,28 +67,33 @@ class SummaryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $groupID)
     {
-        
+        $summary_ids = $request->input('summary_ids');
+        $data = ['GroupID' => 0, 'OrderID' => 0];
+        SummaryModel::where('GroupID', $groupID)->update($data);
+        if (!empty($summary_ids)) {
+            $order_id = 1;
+            for ($index = 0; $index < count($summary_ids); ++$index) {
+                if (!is_numeric($summary_ids[$index])) { continue; }
+                $data = [
+                    'GroupID' => $groupID,
+                    'OrderID' => $order_id
+                ];
+                SummaryModel::where('ID', $summary_ids[$index])->update($data);
+                ++$order_id;
+            }
+        }
+        return response()->json(['success' => 'success'], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        
-    }
 
 
 
-    private function applyQuery(&$model, $query, $grouped)
+    private function applyQuery(&$model, String $query, Int $grouped)
     {
         if (!empty($query)) {
-            if ($grouped > 0) {
+            if ($grouped > 1) {
                 $model = $model->where('Title', 'LIKE', "%$query%");
                 return null;
             } else {
@@ -109,7 +103,7 @@ class SummaryController extends Controller
         }
     }
 
-    private function applyGrouped(&$model, $grouped, $groupID)
+    private function applyGrouped(&$model, Int $grouped, Int $groupID)
     {
         if (!empty($groupID)) {
             $model = $model->where('GroupID', $groupID);
@@ -124,22 +118,23 @@ class SummaryController extends Controller
         }
     }
 
-    private function getQueryGroupID($query)
+    private function getQueryGroupID(String $query)
     {
         $group_ids = SummaryModel::select('GroupID')
                     ->where('GroupID', '>', 0)
                     ->where('Title', 'LIKE', "%$query%")
                     ->get()
-                    ->pluck('GroupID');
+                    ->pluck('GroupID')
+                    ->toArray();
         return $group_ids;
     }
 
-    private function applyLimit(&$model, $page, $per_page)
+    private function applyLimit(&$model, Int $page, Int $per_page)
     {
         $model = $model->skip($page * $per_page)->take($per_page);
     }
 
-    private function applyOrderBy(&$model, $sort, $grouped)
+    private function applyOrderBy(&$model, String $sort, Int $grouped)
     {
         if ($grouped > 0) {
             $model = $model->orderBy('GroupID', 'ASC');
