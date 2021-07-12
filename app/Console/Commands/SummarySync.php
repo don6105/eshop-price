@@ -46,7 +46,7 @@ class SummarySync extends Command
             if (!$this->option('schedule')) {
                 $summary->setOutput($this->output);
             }
-            $sync_num = $summary->syncGameInfo($country);
+            $sync_num = $summary->syncSummaryInfo($country);
             $this->info(PHP_EOL." summary({$country}) finished.");
 
             echo "End summary:sync {$country} @ ".date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;

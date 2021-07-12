@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\GameCrawl::class,
         \App\Console\Commands\SummarySync::class,
         \App\Console\Commands\SummaryGroup::class,
+        \App\Console\Commands\SummaryPrice::class,
         \App\Console\Commands\ExchangePull::class,
         \App\Console\Commands\WikiGamePull::class,
     ];

@@ -16,6 +16,7 @@ class SummaryProvider extends ServiceProvider implements DeferrableProvider
     {
         $this->app->bind('SummarySync',  'App\Services\SummarySync');
         $this->app->bind('SummaryGroup', 'App\Services\SummaryGroup');
+        $this->app->bind('SummaryPrice', 'App\Services\SummaryPrice');
     }
 
     /**
@@ -35,6 +36,6 @@ class SummaryProvider extends ServiceProvider implements DeferrableProvider
      */
     public function provides()
     {
-        return [SummarySync::class, SummaryGroup::class];
+        return [SummarySync::class, SummaryGroup::class, SummaryPrice::class];
     }
 }

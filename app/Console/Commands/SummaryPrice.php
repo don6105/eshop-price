@@ -4,21 +4,21 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 
-class SummaryGroup extends Command
+class SummaryPrice extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'summary:group {--schedule}';
+    protected $signature = 'summary:price {--schedule}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'make same games into the group from each eshop of country.';
+    protected $description = 'Decide MinPrice and MinCountry in games of the group.';
 
     /**
      * Create a new command instance.
@@ -37,8 +37,11 @@ class SummaryGroup extends Command
      */
     public function handle()
     {
-        $summary = app()->make('SummaryGroup');
-        $summary->setSummaryGroup();
+        $summary = app()->make('SummaryPrice');
+        if (!$this->option('schedule')) {
+            $summary->setOutput($this->output);
+        }
+        $summary->setSummaryPrice();
         return 0;
     }
 }

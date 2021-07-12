@@ -4,5 +4,5 @@ namespace App\Contracts;
 
 interface SummarySync
 {
-    public function syncGameInfo($country);
+    public function syncSummaryInfo($country);
 }

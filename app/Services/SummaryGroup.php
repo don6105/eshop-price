@@ -24,7 +24,7 @@ class SummaryGroup extends BaseService implements SummaryGroupContract
         }
     }
 
-    public function setGameGroup():Int
+    public function setSummaryGroup():Int
     {
         $pending    = $this->getSummaryData();
         $pending    = $this->formatGameName($pending);
