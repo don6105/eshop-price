@@ -21,10 +21,11 @@ class Summary extends JsonResource
             'Boxart'        => $this->Boxart,
             'Country'       => $this->Country,
             $this->mergeWhen(!$is_admin, [
-                'Discount'      => $this->Discount,
+                'MinCountry'    => $this->MinCountry,
+                'MinPrice'      => round($this->MinPrice),
+                'MinMSRP'       => round($this->MinMSRP),
+                'MinDiscount'   => round($this->MinDiscount),
                 'IsLowestPrice' => $this->IsLowestPrice,
-                'Price'         => round($this->Price),
-                'MSRP'          => round($this->MSRP),
             ]),
             $this->mergeWhen($is_admin, [
                 'ID' => $this->ID

@@ -157,8 +157,6 @@ class SummaryController extends Controller
                 return null;
             }
         }
-        $model = $model->orderBy('Discount', 'DESC');
-    }
-
-    
+        $model = $model->orderBy('MinDiscount', 'DESC');
+    }  
 }
