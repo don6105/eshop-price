@@ -42,6 +42,10 @@ class Kernel extends ConsoleKernel
             ->dailyAt('05:00')
             ->appendOutputTo($log);
         
+        $schedule->command('summary:price --schedule')
+            ->everyFiveMinutes()
+            ->appendOutputTo($log);
+
         // remove expired pasport token.
         $schedule->command('passport:purge')->hourly();
     }
