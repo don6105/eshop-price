@@ -20,6 +20,7 @@ class Base implements BaseContract {
         if (!isset($slice_num) || $slice_num !== $sliceNum) {
             $slice_num = $sliceNum;
             $bar = $this->output->createProgressBar($sliceNum);
+            $bar->setFormat(" %current:4s% / %max:4s% [%bar%] %percent:3s%%\n");
             $bar->start();
         }
         if (isset($bar) && $count == $sliceNum) {

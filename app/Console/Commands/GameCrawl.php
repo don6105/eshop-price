@@ -74,7 +74,7 @@ class GameCrawl extends Command
             $interface    = class_implements($this->crawler);
             $methods      = get_class_methods(array_pop($interface));
             $finished_msg = array_map(function ($m) {
-                return PHP_EOL."  ".date('Y-m-d H:i:s')." $m() finished.";
+                return "  ".date('Y-m-d H:i:s')." $m() finished.".PHP_EOL;
             }, $methods);
             $this->work_list = array_combine($methods, $finished_msg);
         }

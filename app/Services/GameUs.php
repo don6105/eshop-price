@@ -51,24 +51,36 @@ class GameUs extends BaseService implements GameContract
     public function getGamePrice()
     {
         $header  = $this->getHeader();
+
+        $price_range = [
+            'priceRange:Free to start',
+            'priceRange:$0 - $4.99',
+            'priceRange:$5 - $9.99',
+            'priceRange:$10 - $19.99',
+            'priceRange:$20 - $39.99',
+            'priceRange:$40+'
+        ];
         $sort_by = [
-            'ncom_game_en_us',
-            'ncom_game_en_us_release_des',
             'ncom_game_en_us_price_asc',
             'ncom_game_en_us_price_des'
         ];
-        foreach ($sort_by as $sort) {
-            $total = null;
-            for ($page = 0; ;++$page) {
-                $query   = $this->getQueryParam($page, $sort);
-                $data    = $this->getGamesData($header, $query);
-                if (!isset($total)) {
-                    $total = $this->getTotalGamesNum($data);
+        
+        foreach ($price_range as $range) {
+            foreach ($sort_by as $sort) {
+                $total = null;
+                for ($page = 0; ;++$page) {
+                    $query   = $this->getQueryParam($page, $sort, $range);
+                    $data    = $this->getGamesData($header, $query);
+                    if (!isset($total)) {
+                        $total = $this->getTotalGamesNum($data);
+                    }
+                    if ($total == 0) { break; }
+                    $data    = $this->parseGamePriceData($data);
+                    $is_save = $this->saveGamesData($data);
+                    $this->progressBar(ceil($total/$this->num_per_page));
+                    if (!$is_save) { break; }
                 }
-                $data    = $this->parseGamePriceData($data);
-                $is_save = $this->saveGamesData($data);
-                $this->progressBar(ceil($total/$this->num_per_page));
-                if (!$is_save) { break; }
+                if ($total <= 1000) { break; }
             }
         }
     }
@@ -96,7 +108,7 @@ class GameUs extends BaseService implements GameContract
     }
 
 
-    private function getQueryParam($page = 0, $sort)
+    private function getQueryParam(Int $page = 0, String $sort, String $priceRange)
     {
         $facets = [
             "generalFilters",
@@ -110,6 +122,11 @@ class GameUs extends BaseService implements GameContract
             "esrbRating",
             "playerFilters"
         ];
+        $fiters = [
+            '["'.$priceRange.'"]',
+            '["availability:Available now"]',
+            '["platform:Nintendo Switch"]'
+        ];
 
         $param = new \stdClass();
         $param->indexName = $sort;
@@ -121,7 +138,7 @@ class GameUs extends BaseService implements GameContract
             'analytics'         => 'false',
             'facets'            => json_encode($facets),
             'tagFilters'        => '',
-            'facetFilters'      => '[["availability:Available now"],["platform:Nintendo Switch"]]'
+            'facetFilters'      => '['.implode(',', $fiters).']'
         ]);
 
         $request = new \stdClass();

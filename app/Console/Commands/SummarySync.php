@@ -47,7 +47,7 @@ class SummarySync extends Command
                 $summary->setOutput($this->output);
             }
             $sync_num = $summary->syncSummaryInfo($country);
-            $this->info(PHP_EOL." summary({$country}) finished.");
+            $this->info(" summary({$country}) finished.".PHP_EOL);
 
             echo "End summary:sync {$country} @ ".date('Y-m-d H:i:s').PHP_EOL.PHP_EOL;
 

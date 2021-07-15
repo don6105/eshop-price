@@ -107,11 +107,12 @@ class SummaryController extends Controller
     {
         if (!empty($groupID)) {
             $model = $model->where('GroupID', $groupID);
-            return null;
+            return;
         }
         if ($grouped === 0) {
             $model = $model->where('GroupID', '>', 0)
-                        ->where('OrderID', '1');
+                        ->where('OrderID', '1')
+                        ->where('IsGroupPrice', 1);
         }
         if ($grouped === 1) {
             $model = $model->where('GroupID', '>', 0);
