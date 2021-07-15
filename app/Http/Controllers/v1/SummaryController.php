@@ -84,6 +84,10 @@ class SummaryController extends Controller
                 ++$order_id;
             }
         }
+        
+        dispatch(function () use ($groupID) {
+            \Artisan::call('summary:price '.$groupID);
+        });
         return response()->json(['success' => 'success'], 200);
     }
 

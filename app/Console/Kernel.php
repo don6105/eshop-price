@@ -43,7 +43,7 @@ class Kernel extends ConsoleKernel
             ->appendOutputTo($log);
         
         $schedule->command('summary:price --schedule')
-            ->everyFiveMinutes()
+            ->hourly()
             ->appendOutputTo($log);
 
         // remove expired pasport token.

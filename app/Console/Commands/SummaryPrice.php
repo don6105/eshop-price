@@ -11,7 +11,7 @@ class SummaryPrice extends Command
      *
      * @var string
      */
-    protected $signature = 'summary:price {--schedule}';
+    protected $signature = 'summary:price {group_id? : restrict by provided group_id.}';
 
     /**
      * The console command description.
@@ -37,11 +37,9 @@ class SummaryPrice extends Command
      */
     public function handle()
     {
-        $summary = app()->make('SummaryPrice');
-        if (!$this->option('schedule')) {
-            $summary->setOutput($this->output);
-        }
-        $summary->setSummaryPrice();
+        $group_id = intval($this->argument('group_id'));
+        $summary  = app()->make('SummaryPrice');
+        $summary->setSummaryPrice($group_id);
         return 0;
     }
 }

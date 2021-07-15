@@ -8,9 +8,12 @@ use App\Contracts\SummaryPrice as SummaryPriceContract;
 
 class SummaryPrice extends BaseService implements SummaryPriceContract
 {
-    public function setSummaryPrice()
+    public function setSummaryPrice($groupID = 0)
     {
-        $group_ids = $this->getTodoGroupIDs();
+        if (empty($groupID)) {
+            $group_ids = $this->getTodoGroupIDs();
+        }
+        $group_ids = empty($groupID)? $this->getTodoGroupIDs() : (Array)$groupID;
         $this->traverseSummaryGroup($group_ids);
     }
 
@@ -55,16 +58,7 @@ class SummaryPrice extends BaseService implements SummaryPriceContract
     private function computeGroupPrice(Array $groupData):Array
     {
         foreach ($groupData as $summary) {
-            // init if var is null.
-            $min_country  = $min_country?? $summary['Country'];
-            $min_price    = $min_price?? $summary['Price'];
-            $min_lowest   = $min_lowest?? $summary['LowestPrice'];
-            $min_msrp     = $min_msrp?? 0;
-            $min_discount = $min_discount?? 0;
-            
-            
-            // compare
-            if ($min_price > $summary['Price']) {
+            if (!isset($min_price) || $min_price >= $summary['Price']) {
                 $min_country  = $summary['Country'];
                 $min_price    = $summary['Price'];
                 $min_lowest   = $summary['LowestPrice'];
@@ -73,10 +67,10 @@ class SummaryPrice extends BaseService implements SummaryPriceContract
             }
         }
         $result = [
-            'GroupCountry'    => $min_country,
-            'GroupPrice'      => $min_price,
-            'GroupMSRP'       => $min_msrp,
-            'GroupDiscount'   => $min_discount,
+            'GroupCountry'  => $min_country,
+            'GroupPrice'    => $min_price,
+            'GroupMSRP'     => $min_msrp,
+            'GroupDiscount' => $min_discount,
             'IsLowestPrice' => $this->isLowestPrice($min_price, $min_msrp, $min_lowest),
             'IsGroupPrice'  => 1
         ];
