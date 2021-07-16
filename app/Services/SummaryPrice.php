@@ -47,16 +47,20 @@ class SummaryPrice extends BaseService implements SummaryPriceContract
     
     private function getSummaryGroup(Int $groupID):Array
     {
-        $summarys = SummaryModel::select('GroupID', 'Country', 'Price', 'MSRP', 'LowestPrice')
-                        ->where('GroupID', $groupID)
-                        ->get()
-                        ->keyBy('Country')
-                        ->toArray();
+        // with need select both foreign key(summary.GameID, game.ID)
+        $summarys = SummaryModel::select('GroupID', 'Country', 'Price')
+                    ->addSelect('MSRP', 'LowestPrice','GameID')
+                    ->with('game:ID,SupportChinese')
+                    ->where('GroupID', $groupID)
+                    ->get()
+                    ->keyBy('Country')
+                    ->toArray();
         return $summarys;
     }
 
     private function computeGroupPrice(Array $groupData):Array
     {
+        $full_chinese = 1;
         foreach ($groupData as $summary) {
             if (!isset($min_price) || $min_price >= $summary['Price']) {
                 $min_country  = $summary['Country'];
@@ -65,6 +69,9 @@ class SummaryPrice extends BaseService implements SummaryPriceContract
                 $min_msrp     = $summary['MSRP'];
                 $min_discount = $this->getDiscount($summary['Price'], $summary['MSRP']);
             }
+            if (empty($summary['game']['SupportChinese'])) {
+                $full_chinese = 0;
+            }
         }
         $result = [
             'GroupCountry'  => $min_country,
@@ -72,6 +79,7 @@ class SummaryPrice extends BaseService implements SummaryPriceContract
             'GroupMSRP'     => $min_msrp,
             'GroupDiscount' => $min_discount,
             'IsLowestPrice' => $this->isLowestPrice($min_price, $min_msrp, $min_lowest),
+            'IsFullChinese' => $full_chinese,
             'IsGroupPrice'  => 1
         ];
         return $result;

@@ -164,10 +164,10 @@ class GameHk extends BaseService implements GameContract
         $nso        = empty($nso)? 'Yes' : 'No';
         $langs      = $dom->find('.supported_languages > div');
         $langs      = isset($langs[1])? $langs[1]->innerText() : ''; 
-        $langs      = array_map('trim', explode(',', $langs));
+        $langs      = explode(',', $langs);
         $playmode   = $dom->find('.supported_play_modes > div');
         $playmode   = isset($playmode[1])? $playmode[1]->innerText() : '';
-        $playmode   = array_map('trim', explode(',', $playmode));
+        $playmode   = explode(',', $playmode);
         $info       = [
             'Description'     => html_entity_decode($desc, ENT_QUOTES),
             'GameSize'        => $game_size,
@@ -175,12 +175,12 @@ class GameHk extends BaseService implements GameContract
             'Genres'          => $genres,
             'Publishers'      => $publisher,
             'NSO'             => $nso,
-            'SupportEnglish'  => in_array('英文', $langs)? 1 : 0,
-            'SupportChinese'  => in_array('中文', $langs)? 1 : 0,
-            'SupportJapanese' => in_array('日文', $langs)? 1 : 0,
-            'TVMode'          => in_array('TV',  $playmode)? 1 : 0,
-            'TabletopMode'    => in_array('桌上', $playmode)? 1 : 0,
-            'HandheldMode'    => in_array('手提', $playmode)? 1 : 0,
+            'SupportEnglish'  => $this->findInArray('英文', $langs)? 1 : 0,
+            'SupportChinese'  => $this->findInArray('中文', $langs)? 1 : 0,
+            'SupportJapanese' => $this->findInArray('日文', $langs)? 1 : 0,
+            'TVMode'          => $this->findInArray('TV',  $playmode)? 1 : 0,
+            'TabletopMode'    => $this->findInArray('桌上', $playmode)? 1 : 0,
+            'HandheldMode'    => $this->findInArray('手提', $playmode)? 1 : 0,
         ];
         return $info;
     }
@@ -214,5 +214,13 @@ class GameHk extends BaseService implements GameContract
             'LowestPrice' => PriceHkModel::where('GameID', $gameID)->min('Price')
         ];
         return $price;
+    }
+
+    private function findInArray($string, $array)
+    {
+        foreach ($array as $row) {
+            if (stripos($row, $string) !== false) { return true; }
+        }
+        return false;
     }
 }

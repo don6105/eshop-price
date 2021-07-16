@@ -18,11 +18,12 @@ class SummarySync extends BaseService implements SummarySyncContract
             $games   = $model::with('price')->NeedSync()->get();
             $summary = new SummaryModel();
             foreach ($games as $game) {
+                $title  = $game->Title ?? '';
                 $price  = $game->price->Price ?? 0.0;
                 $msrp   = $game->MSRP ?? 0.0;
                 $lowest = $game->LowestPrice?? 0.0;
                 $game_data = [
-                    'Title'         => $game->Title ?? '',
+                    'Title'         => $this->trimSpecialString($title),
                     'GameID'        => $game->ID ?? '',
                     'Country'       => $country,
                     'Boxart'        => $game->Boxart ?? '',
@@ -44,7 +45,7 @@ class SummarySync extends BaseService implements SummarySyncContract
 
 
 
-    private function changeToNTD($country, $value):Float
+    private function changeToNTD(String $country,Float $value):Float
     {
         static $exchange;
         if (!isset($exchange[$country])) {
@@ -54,5 +55,10 @@ class SummarySync extends BaseService implements SummarySyncContract
             $exchange[$country] = $rate->Rate;
         }
         return floatval($value) * $exchange[$country];
+    }
+
+    private function trimSpecialString(String $title):String
+    {
+        return str_replace(['®', '™'], '', $title);
     }
 }

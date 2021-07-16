@@ -178,9 +178,27 @@ class SummaryGroup extends BaseService implements SummaryGroupContract
     {
         if (empty($array)) { return null; }
 
+        $v_pattern = [
+            '(\s(\d+|\w|[iv]{1,3})(\s|$))',
+            '(\d+|[^a-z][iv]{1,3}+)\W{0,2}$',
+            '(\d{4})'
+        ];
+        $v_pattern = sprintf('/%s/i', implode('|', $v_pattern));
+
+        $title_len = strlen($title);
+        $version   = preg_match($v_pattern, $title) > 0;
         foreach ($array as $key => $row) {
-            if ($row['Title'] === $title) {
+            if (strcasecmp($row['Title'], $title) === 0) {
                 return $key;
+            }
+            if ($version || preg_match($v_pattern, $row['Title']) > 0) {
+                continue;
+            }
+            if ($title_len > 15 && abs(strlen($row['Title']) - $title_len) < 3) {
+                $dist = levenshtein($title, $row['Title']);
+                if ($dist > -1 && $dist < 3) {
+                    return $key;
+                }
             }
         }
         return null;
