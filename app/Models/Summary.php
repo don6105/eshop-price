@@ -30,9 +30,13 @@ class Summary extends Model
         // get dynamic relationship by reading path of models
         // ex. ['us' => 'App\Models\GameUs', ... ]
         $cache = Cache::store('file');
-        if ($cache->has(__FUNCTION__)) {
-            return $cache->get(__FUNCTION__);
-        }
+
+        try {
+            if ($cache->has(__FUNCTION__)) {
+                return $cache->get(__FUNCTION__);
+            }
+        } catch(\Throwable $t) {}
+        
         $relationships = [];
         foreach (scandir(app_path('Models')) as $model) {
             if (strpos($model, 'Game') === false) { continue; }
@@ -42,7 +46,9 @@ class Summary extends Model
                 $relationships[ $country ] = $model;
             }
         }
-        $cache->put(__FUNCTION__, $relationships, now()->addHours(12));
+        try {
+            $cache->put(__FUNCTION__, $relationships, now()->addHours(12));
+        } catch(\Throwable $t) {}
         return $relationships;
     }
 }
