@@ -37,8 +37,16 @@ class SummaryGroup extends Command
      */
     public function handle()
     {
-        $summary = app()->make('SummaryGroup');
-        $summary->setSummaryGroup();
+        $summary   = app()->make('SummaryGroup');
+        $group_num = $summary->setSummaryGroup();
+        $this->callBack($group_num);
         return 0;
+    }
+
+    private function callBack($groupNum)
+    {
+        if ($groupNum > 0) {
+            $this->call('summary:price');    
+        }
     }
 }
