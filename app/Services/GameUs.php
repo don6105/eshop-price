@@ -22,7 +22,7 @@ you can only fetch the 1000 hits for this query. You can extend the number of hi
 
 class GameUs extends BaseService implements GameContract
 {
-    private $num_per_page = 40;
+    private $num_per_page = 100;
 
     public function __get($name)
     {

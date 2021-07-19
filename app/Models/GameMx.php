@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Base as Model;
 
-class GameUs extends Model
+class GameMx extends Model
 {
     use HasFactory;
 
@@ -14,7 +14,7 @@ class GameUs extends Model
 
     public $incrementing = true;
 
-    protected $table      = 'game_us';
+    protected $table      = 'game_mx';
     protected $primaryKey = 'ID';
     protected $guarded    = ['ID'];
 
