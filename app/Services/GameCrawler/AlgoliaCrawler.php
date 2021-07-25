@@ -3,48 +3,45 @@
 namespace App\Services\GameCrawler;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use App\Models\Batch as BatchModel;
-use App\Services\GameCrawler\Config;
-use App\Services\GameCrawler\AlgoliaResponse;
-use App\Services\GameCrawler\AlgoliaQuery;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise;
+use GuzzleHttp\HandlerStack;
+use GuzzleRetry\GuzzleRetryMiddleware;
 
 class AlgoliaCrawler {
     private $num_per_page = 100;
     private $total_num    = [];
     private $done_num     = [];
-    private $output       = null;
-    private $bar          = null;
 
-    public function __construct(String $country)
+    public function __construct($gameModel, $priceModel)
     {
-        $this->country = strtolower($country);
+        $this->Game    = $gameModel;
+        $this->Price   = $priceModel;
         $this->Config  = new Config($this->country);
         $this->Query   = new AlgoliaQuery($this->Config);
         $this->Client  = new Client([
+            'handler'  => $this->getGuzzleHandler(),
             'headers'  => $this->Query->getQueryHeaders(),
             'base_uri' => $this->Query->getQueryUrl()
         ]);
 
         $this->initClassVar();
-
-        // Models
-        $model_name    = 'App\\Models\\Game'.ucfirst($this->country);
-        $this->Game    = new $model_name();
-        $model_name    = 'App\\Models\\Price'.ucfirst($this->country);
-        $this->Price   = new $model_name();
     }
 
     public function __get($name)
     {
-        if ($name === 'batch_id') {
+        if (strcasecmp($name, 'batch_id') === 0) {
             $batch = new BatchModel();
             $batch->Country   = $this->country;
             $batch->StartTime = date('Y-m-d H:i:s');
             $batch->save();
             $this->batch_id = $batch->getKey();
             return $this->batch_id;
+        } elseif (strcasecmp($name, 'country') === 0) {
+            $this->country = $this->getCountry();
+            return $this->country;
         }
     }
 
@@ -67,12 +64,42 @@ class AlgoliaCrawler {
             $responses = Promise\Utils::settle($promises)->wait();
             $this->getBatchResult($responses);
         }
-        if (isset($this->bar)) {
-            $this->bar->finish();
-        }
+        $this->closeProgressBar();
     }
 
     
+
+    private function getCountry()
+    {
+        $class = get_class($this->Game);
+        if (preg_match('/\WGame([a-z]{2})$/i', $class, $m) > 0) {
+            return strtolower($m[1]);
+        }
+        return '';
+    }
+
+    private function getGuzzleHandler()
+    {
+        $method = __METHOD__;
+        $stack  = HandlerStack::create();
+        $stack->push(GuzzleRetryMiddleware::factory([
+            'max_retry_attempts' => 3,
+            'retry_on_status'    => [404, 429, 503, 500],
+            'on_retry_callback'  => function($attemptNumber, $delay, &$request, &$options, $response) use ($method) {
+                if ($attemptNumber === 3) {
+                    $log = [
+                        'Trace Source: '.$method,
+                        'Status Code : '.$response->getStatusCode(),
+                        'Request URL : '.$request->getUri(),
+                        'Request Body: '.urldecode($request->getBody())
+                    ];
+                    Log::error(PHP_EOL.implode(PHP_EOL, $log).PHP_EOL);
+                }
+            }
+        ]));
+        return $stack;
+    } 
+
     private function initClassVar()
     {
         $ranges = $this->Config->getConfig('base.range', []);
@@ -82,7 +109,7 @@ class AlgoliaCrawler {
 
     private function getBatchClient(Array $ranges):Array
     {
-        $promises  = [];
+        $promises = [];
         foreach ($ranges as $range) {
             $params = $this->prepareQueryParams($range);
             if (empty($params)) { continue; }
@@ -102,7 +129,7 @@ class AlgoliaCrawler {
         $this->initProgressBar();
         foreach ($algolia_arr as $range => $algolia) {
             $this->done_num[$range] += $this->saveGameData($algolia);
-            $this->addProgressBar();
+            $this->increaseProgressBar();
         }
     }
     
@@ -150,9 +177,14 @@ class AlgoliaCrawler {
         }
     }
 
-    private function addProgressBar()
+    private function increaseProgressBar()
     {
         isset($this->bar) && $this->bar->advance(1);
+    }
+
+    private function closeProgressBar()
+    {
+        isset($this->bar) && $this->bar->finish();
     }
 
     private function setTotalNum(String $range, Int $num)
