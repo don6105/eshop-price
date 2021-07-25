@@ -42,7 +42,7 @@ class Kernel extends ConsoleKernel
             ->dailyAt('05:00')
             ->appendOutputTo($log);
         
-        $schedule->command('summary:price --schedule')
+        $schedule->command('summary:price')
             ->hourly()
             ->appendOutputTo($log);
 
