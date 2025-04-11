@@ -53,6 +53,8 @@ class GameCrawl extends Command
         return 0;
     }
 
+    
+
     private function getInstance()
     {
         $country       = strtolower($this->argument('country'));
@@ -96,9 +98,11 @@ class GameCrawl extends Command
 
     private function callBack($country)
     {
+        /*
         $this->call('summary:sync', [
             'country'    => $country,
             '--schedule' => $this->option('schedule')? true : false
         ]);
+        */
     }
 }

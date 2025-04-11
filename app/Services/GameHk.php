@@ -10,7 +10,7 @@ use App\Models\PriceHk as PriceHkModel;
 use App\Libraries\Curl as CurlLib;
 use voku\helper\HtmlDomParser;
 
-define('HK_PAGE_URL', 'https://store.nintendo.com.hk/games/all-released-games?product_list_order=release_date_asc');
+define('HK_PAGE_URL', 'https://store.nintendo.com.hk/download-code?product_list_dir=asc&product_list_limit=48');
 
 class GameHk extends BaseService implements GameContract
 {
@@ -37,10 +37,14 @@ class GameHk extends BaseService implements GameContract
 
     public function getGamePrice()
     {
-        $Curl     = new CurlLib();
-        $response = $Curl->run(HK_PAGE_URL);
-        $games    = $this->parseGamePricePage($response);
-        $this->saveGamesData($games);
+        $Curl      = new CurlLib();
+        $next_page = HK_PAGE_URL;
+        do {
+            echo $next_page.PHP_EOL;
+            $response = $Curl->run($next_page);
+            list($games, $next_page) = $this->parseGamePricePage($response);
+            $this->saveGamesData($games); 
+        } while($next_page !== null);
     }
 
     public function getGameInfo()
@@ -76,17 +80,26 @@ class GameHk extends BaseService implements GameContract
             return [];
         }
 
-        $dom     = HtmlDomParser::str_get_html($response['content']);
-        $targets = $dom->find('.category-product-item');
+        $dom = HtmlDomParser::str_get_html($response['content']);
+
+        $pages = $dom->find('ul.pages-items > .pages-item-next');
+        if (count($pages) == 0) {
+            $next_page = null;
+        } else {
+            $next_page = html_entity_decode( $pages->findOne('a')->getAttribute('href') );
+        }
+        //var_dump($pages); exit;
+
+        $targets = $dom->find('#amasty-shopby-product-list li.product-item');
         $games   = [];
         foreach ($targets as $t) {
             $url         = $t->findOne('a')->getAttribute('href');
-            $boxart      = $t->findOne('img')->getAttribute('data-src');
-            $title       = $t->findOne('.category-product-item-title-link')->innerText();
-            $price       = $t->findOne('.category-product-item-price .price')->innerText();
-            $price       = trim(str_replace('HKD', '', $price));
+            $boxart      = $t->findOne('img')->getAttribute('src');
+            $title       = $t->findOne('.product-item-name')->text();
+            $price       = $t->findOne('.price-final_price span.price')->innerText();
+            $price       = floatval(trim(str_replace('HKD', '', $price)));
             $release_day = $t->findOne('.category-product-item-released')->innerText();
-            $release_day = trim(str_replace('<b>發售日期</b>', '', $release_day));
+            $release_day = trim(str_replace('<span>發售日期</span>', '', $release_day));
             $games[] = [
                 'URL'         => $url,
                 'Boxart'      => $boxart,
@@ -94,8 +107,9 @@ class GameHk extends BaseService implements GameContract
                 'Price'       => $price,
                 'ReleaseDate' => $release_day
             ];
+            //var_dump($games); exit;
         }
-        return $games;
+        return array($games, $next_page);
     }
 
     private function saveGamesData($games)
@@ -131,7 +145,8 @@ class GameHk extends BaseService implements GameContract
     {
         $last_check = date('Y-m-d H:i:s', strtotime('-8 hours'));
         $orm = GameHkModel::where('UpdateInfoTime', '<', $last_check)
-            ->orWhereNull('UpdateInfoTime');
+                ->orWhereNull('UpdateInfoTime');
+        //$orm = GameHkModel::where('ID', '2');
         
         if(!$getNum) {
             $batch_size = 500;
@@ -149,25 +164,17 @@ class GameHk extends BaseService implements GameContract
         }
 
         $dom        = HtmlDomParser::str_get_html($response['content']);
-        $game_size  = $dom->find('.required_space > div');
-        $game_size  = isset($game_size[1])? $game_size[1]->innerText() : '';
-        $desc       = $dom->findOne('.description .value')->innerHtml();
-        $player_num = $dom->find('.no_of_players > div');
-        $player_num = isset($player_num[1])? $player_num[1]->innerText() : '';
-        $player_num = preg_replace('/\D+/im', '', $player_num);
-        $player_num = is_numeric($player_num)? $player_num : -1;
-        $genres     = $dom->find('.game_category > div');
-        $genres     = isset($genres[1])? $genres[1]->innerText() : '';
-        $publisher  = $dom->find('.publisher > div');
-        $publisher  = isset($publisher[1])? $publisher[1]->innerText() : '';
-        $nso        = $dom->findOne('.no_of_players_online')->innerText();
-        $nso        = empty($nso)? 'Yes' : 'No';
-        $langs      = $dom->find('.supported_languages > div');
-        $langs      = isset($langs[1])? $langs[1]->innerText() : ''; 
+        $game_size  = $dom->findOne('.required_space .attribute-item-val')->innerText();
+        $desc       = $dom->findOne('.mfr_description .product-attribute-content')->innerHtml();
+        $player_num = $dom->findOne('.no_of_players > .product-attribute-val')->innerText();
+        $player_num = preg_replace('/[^0-9~]+/im', '', $player_num);
+        $genres     = $dom->findOne('.game_category .attribute-item-val')->innerText();
+        $publisher  = $dom->findOne('.publisher .attribute-item-val')->innerText();
+        $nso        = count($dom->find('.no_of_players_online'))>0? 'Yes' : 'No';
+        $langs      = $dom->findOne('.supported_languages .attribute-item-val')->innerText(); 
         $langs      = explode(',', $langs);
-        $playmode   = $dom->find('.supported_play_modes > div');
-        $playmode   = isset($playmode[1])? $playmode[1]->innerText() : '';
-        $playmode   = explode(',', $playmode);
+        $playmode   = $dom->findOne('.supported_play_modes');
+        //-------------------------------------------------------------------
         $info       = [
             'Description'     => html_entity_decode($desc, ENT_QUOTES),
             'GameSize'        => $game_size,
@@ -178,10 +185,11 @@ class GameHk extends BaseService implements GameContract
             'SupportEnglish'  => $this->findInArray('英文', $langs)? 1 : 0,
             'SupportChinese'  => $this->findInArray('中文', $langs)? 1 : 0,
             'SupportJapanese' => $this->findInArray('日文', $langs)? 1 : 0,
-            'TVMode'          => $this->findInArray('TV',  $playmode)? 1 : 0,
-            'TabletopMode'    => $this->findInArray('桌上', $playmode)? 1 : 0,
-            'HandheldMode'    => $this->findInArray('手提', $playmode)? 1 : 0,
+            'TVMode'          => isset($playmode->find('.tv_mode')[0])? 1 : 0,
+            'TabletopMode'    => isset($playmode->find('.tabletop_mode')[0])? 1 : 0,
+            'HandheldMode'    => isset($playmode->find('.handheld_mode')[0])? 1 : 0,
         ];
+        //var_dump($info); exit;
         return $info;
     }
 
@@ -191,20 +199,41 @@ class GameHk extends BaseService implements GameContract
             return ['GalleryImage' => ''];
         }
         $dom  = HtmlDomParser::str_get_html($response['content']);
-        $json = $dom->findOne('.media script[type="text/x-magento-init"]')->innerText();
+        $json = $dom->findOne('.product.media script[type="text/x-magento-init"]')->innerText();  
         $json = json_decode($json, true);
         if (!isset($json['[data-gallery-role=gallery-placeholder]']['mage/gallery/gallery']['data'])) {
             return ['GalleryImage' => ''];
         }
         $json = $json['[data-gallery-role=gallery-placeholder]']['mage/gallery/gallery']['data'];
-        $json = array_filter(array_column($json, 'img'));
+        $json = array_filter($json, function($k) {
+            return $k['type'] == 'image';
+        });
+        $json = array_column($json, 'img');
+        //var_dump($json); exit;
         return ['GalleryImage' => implode(';;', $json)];
     }
 
     private function parseGalleryVideo($response)
     {
-        // maybe not exist video in hk eshop.
-        return ['GalleryVideo' => ''];
+        if (empty($response['content'])) {
+            return ['GalleryVideo' => ''];
+        }
+        $dom  = HtmlDomParser::str_get_html($response['content']);
+        $json = $dom->findOne('.product.media script[type="text/x-magento-init"]')->innerText();  
+        $json = json_decode($json, true);
+        if (!isset($json['[data-gallery-role=gallery-placeholder]']['mage/gallery/gallery']['data'])) {
+            return ['GalleryVideo' => ''];
+        }
+        $json = $json['[data-gallery-role=gallery-placeholder]']['mage/gallery/gallery']['data'];
+        $json = array_filter($json, function($k) {
+            return $k['type'] == 'video';
+        });
+        //var_dump($json); exit;
+        if (count($json) > 0) {
+           return ['GalleryVideo' => current( array_column($json, 'videoUrl') )]; 
+       } else {
+           return ['GalleryVideo' => ''];
+       }
     }
 
     private function getHistoryPrice($gameID)
