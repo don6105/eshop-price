@@ -1,4 +1,5 @@
 # The price comparison website for Nintendo Switch games
+前端程式請至 https://github.com/don6105/eshop-price-frontend
 ## using Laravel 8
 #### artisan command： 
 1. game:crawl us
