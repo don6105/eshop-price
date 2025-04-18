@@ -43,9 +43,10 @@ class Base extends Model {
 
     private function callSetAttribute(&$data)
     {
-        $methods = get_class_methods($this);
+        $methods = get_class_methods($this); //class reflection
         foreach ($data as $k => $v) {
             $setAttr = "set{$k}Attribute";
+            //若子類別中，該欄位有設定Attribute，就自動執行(for資料格式化)
             if (in_array($setAttr, $methods)) {
                 $this->$setAttr($v);
                 $data[$k] = $this->attributes[$k];

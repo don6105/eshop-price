@@ -7,15 +7,19 @@ use App\Models\WikiGame as WikiGameModel;
 use App\Contracts\WikiGame as WikiGameContract;
 use voku\helper\HtmlDomParser;
 
-define('WIKI_URL', 'https://zh.wikipedia.org/wiki/%E4%BB%BB%E5%A4%A9%E5%A0%82Switch%E6%B8%B8%E6%88%8F%E5%88%97%E8%A1%A8');
+define('WIKI_URL', 'https://zh.wikipedia.org/wiki/{{YY}}年任天堂Switch游戏列表');
 
 class WikiGamePull implements WikiGameContract
 {
     public function getGameList():Array
     {
-        $html = $this->getGameListFromWiki();
-        $list = $this->parseWikiPage($html);
-        return $list;
+        $year = range(2017,2023);
+        $list = [];
+        foreach($year as $y) {
+            $html = $this->getGameListFromWiki(str_replace('{{YY}}', strval($y), WIKI_URL));
+            $list = array_merge($list, $this->parseWikiPage($html));
+        }
+        return array_column($list, null);
     }
 
     public function saveGameGroup(Array $gameList):Int
@@ -41,47 +45,63 @@ class WikiGamePull implements WikiGameContract
 
 
     
-    private function getGameListFromWiki():String
+    private function getGameListFromWiki($url):String
     {
         $Curl = new CurlLib();
         $Curl->setHeader(['accept-language: zh-TW,zh;q=0.9,en;q=0.8']);
-        $response = $Curl->run(WIKI_URL);
+        $response = $Curl->run($url);
         return $Curl->isSuccess($response)? $response['content'] : '';
     }
 
     private function parseWikiPage(String $html):Array
     {
         $dom    = HtmlDomParser::str_get_html($html);
-        $target = $dom->find('table.wikitable tbody tr');
+        $target = $dom->find('table.wikitable > tbody > tr');
+        $game_list = [];
+
         foreach ($target as $row) {
-            $td = trim($row->findOne('td')->innerHtml);
-            $td = explode('<br>', str_replace("\n", '<br>', $td));
-            if (reset($td) === 'e.g.格式名') { continue; }
+            if (empty($row->findOne('td')->Text())) { continue; } //跳過標題列
+            $td = $row->findOne('td')->innerHtml();
 
             $game_names = [];
-            foreach ($td as $key => $value) {
-                if (!isset($td[$key])) { continue; }
+            if (stripos($td, '<li>') > -1) {
+                //2022年以後的<td>還能再拆<li>
+                $td = $row->find('td li');
+                foreach($td as $key => $value) {
+                    $game_names[] = $value->Text();
+                }
+            } else {
+                $game_names[] = $row->findOne('td > a')->Text(); //部分遊戲名稱會有超連結
+                $game_names[] = $row->findOne('td > span')->Text(); //部分遊戲名稱會用span包起來
+                $td = preg_replace('/<a[^>]+>.+<\/a>/im', '', $td); //去除超連結
+                $td = preg_replace('/<span[^>]+>.+<\/span>/im', '', $td); //去除span
+                $td = explode('<br>', str_replace("\n", '<br>', $td));
+                foreach ($td as $key => $value) {
+                    if (!isset($td[$key])) { continue; }
 
-                $value = $this->formatGameName($value);
-                if (stripos($value, '*') !== false) { break; }
-                
-                // merge next line if same language
-                if (!empty($td[$key+1])) {
-                    $next = trim(strip_tags($td[$key+1]));
-                    if ($this->getLanguage($value) === $this->getLanguage($next)) {
-                        $value .= ' '.$next;
-                        unset($td[$key+1]);
+                    $value = $this->formatGameName($value);
+                    if (stripos($value, '*') > -1) { break; }
+                    if (stripos($value, 'e.g.格式名') > -1) { break; }
+                    
+                    // merge next line if same language
+                    if (!empty($td[$key+1])) {
+                        $next = trim(strip_tags($td[$key+1]));
+                        if ($this->getLanguage($value) === $this->getLanguage($next)) {
+                            $value .= ' '.$next;
+                            unset($td[$key+1]);
+                        }
                     }
+                    // merge to previous line if current str equals 'for Nintendo Switch'
+                    if (strcasecmp($value, 'for Nintendo Switch') === 0) {
+                        $pre_key = array_key_last($game_names);
+                        $game_names[$pre_key] .= ' '.$value;
+                        continue;
+                    }
+                    $game_names[] = $value;
                 }
-                // merge to previous line if current str equals 'for Nintendo Switch'
-                if (strcasecmp($value, 'for Nintendo Switch') === 0) {
-                    $pre_key = array_key_last($game_names);
-                    $game_names[$pre_key] .= ' '.$value;
-                    continue;
-                }
-                if(empty($value)) { continue; }
-                $game_names[] = $value;
             }
+            
+            $game_names = array_filter($game_names, function($v){ return !empty(trim($v)); });
             $game_names = array_unique($game_names);
             if (empty($game_names)) { continue; }
             $game_list[] = $game_names;

@@ -44,7 +44,7 @@ class CreateGamesTable extends Migration
         Schema::create($table_name, function (Blueprint $table) {
             $table->charset = 'utf8mb4';
             $table->collation = 'utf8mb4_unicode_ci';
-            $table->bigIncrements('ID');
+            $table->bigIncrements('ID')->primary();
             $table->string('Title', 255)->default('')->unique('email');
             $table->string('URL', 1023)->default('');
             $table->string('NSUID', 100)->default('');
