@@ -83,6 +83,13 @@ class Curl {
         return true;
     }
 
+    public function setCookie($domain, $key, $value)
+    {
+        $cookie_name = storage_path().'/cookie.cookie';
+        $expire      = time() + 3600;
+        file_put_contents($cookie_name, "\n$domain\tTRUE\t/\tFALSE\t$expire\t$key\t$value", FILE_APPEND);
+    }
+
 
     private function getHeader()
     {

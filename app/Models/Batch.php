@@ -12,6 +12,7 @@ class Batch extends Model
     public $incrementing = true;
     public $timestamps   = false;
 
+    protected $connection = 'mysql';
     protected $table      = 'batch';
     protected $primaryKey = 'ID';
     protected $guarded    = ['ID'];

@@ -12,6 +12,7 @@ class WikiGame extends Model
     public $incrementing = true;
     public $timestamps   = false;
 
+    protected $connection = 'mysql';
     protected $table      = 'wiki_game';
     protected $primaryKey = 'ID';
     protected $guarded    = ['ID'];

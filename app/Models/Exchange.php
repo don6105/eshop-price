@@ -12,6 +12,7 @@ class Exchange extends Model
     public $incrementing = true;
     public $timestamps   = false;
 
+    protected $connection = 'mysql';
     protected $table      = 'exchange';
     protected $primaryKey = 'ID';
     protected $guarded    = ['ID'];

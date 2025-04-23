@@ -15,10 +15,10 @@ class CreateJobsTable extends Migration
      */
     public function up()
     {
-        if (Schema::hasTable(self::table_name)) {
-            echo 'Table <'.self::table_name.'> already exists.'.PHP_EOL;
+        if (Schema::hasTable(static::table_name)) {
+            echo 'Table <'.static::table_name.'> already exists.'.PHP_EOL;
         } else {
-            Schema::create(self::table_name, function (Blueprint $table) {
+            Schema::create(static::table_name, function (Blueprint $table) {
                 $table->charset = 'utf8mb4';
                 $table->collation = 'utf8mb4_unicode_ci';
                 $table->bigIncrements('id');
@@ -39,6 +39,6 @@ class CreateJobsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists(self::table_name);
+        Schema::dropIfExists(static::table_name);
     }
 }

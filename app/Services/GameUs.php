@@ -10,16 +10,23 @@ use App\Models\GameUs as GameUsModel;
 use App\Models\PriceUs as PriceUsModel;
 use App\Libraries\Curl as CurlLib;
 use voku\helper\HtmlDomParser;
+use DateTime;
+
 
 define('US_ALGOLIA_ID',  'U3B6GR4UA3');
 define('US_ALGOLIA_KEY', 'c4da8be7fd29f0f5bfa42920b0a99dc7');
 define('US_QUERY_URL',   'https://'.US_ALGOLIA_ID.'-dsn.algolia.net/1/indexes/*/queries');
 
 /*
+//(2025.04.23) 新版改用Vue了 有空再研究...
+define('US_ALGOLIA_KEY', 'a29c6927638bfd8cee23993e51e721c9');
+define('US_QUERY_URL',   'https://'.US_ALGOLIA_ID.'-dsn.algolia.net/1/indexes/store_game_en_us/query?x-algolia-agent=Algolia%20for%20JavaScript%20(4.23.2)%3B%20Browser');
+*/
+
+/*
 Algolia限制只能抓一千筆資料，eshop(us)網站也是一樣。
 you can only fetch the 1000 hits for this query. You can extend the number of hits returned via the paginationLimitedTo index parameter or use the browse method. You can read our FAQ for more details about browsing: https://www.algolia.com/doc/faq/index-configuration/how-can-i-retrieve-all-the-records-in-my-index 
 */
-
 class GameUs extends BaseService implements GameContract
 {
     private $num_per_page = 100;
@@ -50,6 +57,7 @@ class GameUs extends BaseService implements GameContract
 
     public function getGamePrice()
     {
+        echo ' <'.__function__.'> start'.PHP_EOL;
         $header  = $this->getHeader();
 
         $price_range = [
@@ -64,7 +72,7 @@ class GameUs extends BaseService implements GameContract
             'ncom_game_en_us_price_asc',
             'ncom_game_en_us_price_des'
         ];
-        
+        return; //@@@
         foreach ($price_range as $range) {
             foreach ($sort_by as $sort) {
                 $total = null;
@@ -87,11 +95,13 @@ class GameUs extends BaseService implements GameContract
 
     public function getGameInfo()
     {
+        echo ' <'.__function__.'> start'.PHP_EOL;
         $this->Curl->setHeader(null);
+        $this->Curl->setCookie('api.accounts.nintendo.com', 'nintendo.ageGate.isOldEnough', 'true'); //年齡確認
         $total_num = $this->getTodoGameInfo(true);
         while(count($todo_data = $this->getTodoGameInfo()) > 0) {
             foreach ($todo_data as $row) {
-                $response   = $this->Curl->run($row->URL);
+                $response   = $this->Curl->run($row->URL);                
                 $game_info  = $this->parseGameInfoPage($response);
                 $game_image = $this->parseGalleryImage($response);
                 $game_video = $this->parseGalleryVideo($response);
@@ -101,7 +111,6 @@ class GameUs extends BaseService implements GameContract
                     $game_video,
                     ['UpdateInfoTime' => date('Y-m-d H:i:s')]
                 );
-                GameUsModel::where('ID', $row->ID)->update($game_info);
                 $this->progressBar($total_num);
             }
         }
@@ -145,7 +154,42 @@ class GameUs extends BaseService implements GameContract
         $request->requests = [$param];
         return json_encode($request);
     }
+    /*
+    private function getQueryParam2(Int $page = 0, String $sort, String $priceRange)
+    {
+        $facets = [
+            "generalFilters",
+            "platform",
+            "availability",
+            "genres",
+            "howToShop",
+            "virtualConsole",
+            "franchises",
+            "priceRange",
+            "esrbRating",
+            "playerFilters"
+        ];
+        $fiters = [
+            '["'.$priceRange.'"]',
+            '["availability:Available now"]',
+            '["platform:Nintendo Switch"]'
+        ];
 
+        $param = new \stdClass();
+        $param->params    = http_build_query([
+            'query'             => '',
+            'hitsPerPage'       => $this->num_per_page,
+            'maxValuesPerFacet' => 30,
+            'page'              => $page,
+            'analytics'         => 'false',
+            'facets'            => json_encode($facets),
+            'tagFilters'        => '',
+            'facetFilters'      => '['.implode(',', $fiters).']'
+        ]);
+
+        return json_encode($param);
+    }
+    */
     private function getHeader()
     {
         return [
@@ -164,7 +208,7 @@ class GameUs extends BaseService implements GameContract
             return null;
         }
         $result = json_decode($response['content'], true);
-        return $result['results'][0] ?? null;
+        return $result ?? null;
     }
 
     private function getTotalGamesNum(Array $data = null)
@@ -246,27 +290,46 @@ class GameUs extends BaseService implements GameContract
         }
 
         $dom       = HtmlDomParser::str_get_html($response['content']);
-        $game_size = $dom->findOne('.file-size dd')->innerText();
-        $langs     = $dom->findOne('.supported-languages dd')->innerText();
-        $langs     = array_map('trim', explode(',', $langs));
-        $langs     = array_map('strtolower', $langs);
-        $desc      = $dom->findOne('[itemprop="description"]')->innerHtml();
-        $info      = [
+        $desc      = $dom->findOne('#main section:nth-child(2) > div > div > div')->Text();
+        $game_info = $dom->find('[aria-labelledby=product-info] > div > div > div > div');
+        $game_size = '';
+        $play_mode = '';
+        $langs     = [];
+        $release   = '';
+        $players   = '';
+        $nso       = '';
+        foreach($game_info as $row) {
+            if(stripos($row->innerText, 'Game file size') > -1) {
+                $game_size = $row->findOne('div > div')->Text();
+            } elseif(stripos($row->innerText, 'Supported play modes') > -1) {
+                $play_mode = $row->findOne('div > div')->Text();
+            } elseif(stripos($row->innerText, 'Supported languages') > -1) {
+                $langs = explode(',', $row->findOne('div > div')->Text());
+                $langs = array_map('trim', $langs);
+            } elseif(stripos($row->innerText, 'Release date') > -1) {
+                $release = $row->findOne('div > div')->Text();
+                $release = DateTime::createFromFormat('M d, Y', $release)->format('Y-m-d');
+            } elseif(stripos($row->innerText, 'No. of players') > -1) {
+                $players = $row->findOne('div > div')->Text();
+                $nso     = stripos($players, 'Online (') > -1? 'Yes' : 'No';
+                if(preg_match('/Single System \(([^\)]+)\)/im', $players, $m)) {
+                    $players = $m[1];
+                }
+            }
+        } 
+        $info = [
             'GameSize'        => $game_size,
+            'ReleaseDate'     => $release,
+            'NSO'             => $nso,
+            'NumOfPlayers'    => $players,
             'Description'     => $desc,
-            'SupportEnglish'  => in_array('english',  $langs)? 1 : 0,
-            'SupportChinese'  => in_array('chinese',  $langs)? 1 : 0,
-            'SupportJapanese' => in_array('japanese', $langs)? 1 : 0
+            'SupportEnglish'  => in_array('English',  $langs)? 1 : 0,
+            'SupportChinese'  => in_array('Chinese',  $langs)? 1 : 0,
+            'SupportJapanese' => in_array('Japanese', $langs)? 1 : 0,
+            'TVMode'          => stripos($play_mode, 'TV mode') > -1? 1 : 0,
+            'TabletopMode'    => stripos($play_mode, 'Tabletop mode') > -1? 1 : 0,
+            'HandheldMode'    => stripos($play_mode, 'Handheld mode') > -1? 1 : 0
         ];
-        $playmode = [
-            '.playmode-tv'       => 'TVMode',
-            '.playmode-tabletop' => 'TabletopMode',
-            '.playmode-handheld' => 'HandheldMode'
-        ];
-        foreach ($playmode as $mode => $db_colum) {
-            $alt = $dom->findOne($mode.' img')->getAttribute('alt');
-            $info[$db_colum] = stripos($alt, 'not supported') === false ? 1 : 0; 
-        }
         return $info;
     }
 

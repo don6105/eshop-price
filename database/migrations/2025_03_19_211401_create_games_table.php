@@ -16,8 +16,8 @@ class CreateGamesTable extends Migration
      */
     public function up()
     {
-        foreach (self::countrys as $country) {
-            $table_name = self::table_name.'_'.$country;
+        foreach (static::countrys as $country) {
+            $table_name = static::table_name.'_'.$country;
             if (Schema::hasTable($table_name)) {
                 echo "Table <$table_name> already exists.".PHP_EOL;
             } else {
@@ -33,8 +33,8 @@ class CreateGamesTable extends Migration
      */
     public function down()
     {
-        foreach (self::countrys as $country) {
-            Schema::dropIfExists(self::table_name.'_'.$country);
+        foreach (static::countrys as $country) {
+            Schema::dropIfExists(static::table_name.'_'.$country);
         }
     }
 
@@ -45,7 +45,7 @@ class CreateGamesTable extends Migration
             $table->charset = 'utf8mb4';
             $table->collation = 'utf8mb4_unicode_ci';
             $table->bigIncrements('ID')->primary();
-            $table->string('Title', 255)->default('')->unique('email');
+            $table->string('Title', 255)->default('')->unique();
             $table->string('URL', 1023)->default('');
             $table->string('NSUID', 100)->default('');
             $table->string('Boxart', 1023)->default('')->comment('縮圖');

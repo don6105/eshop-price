@@ -1,9 +1,12 @@
 # The price comparison website for Nintendo Switch games
 前端程式請至 https://github.com/don6105/eshop-price-frontend
+
+ps.crawler_us已失效
+
 ## using Laravel 8
 #### artisan command： 
-1. game:crawl us
-2. summary:sync us
+1. game:crawl hk
+2. summary:sync hk
 3. summary:group
 4. summary:price
 ### router

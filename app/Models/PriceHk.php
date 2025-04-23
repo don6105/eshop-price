@@ -12,6 +12,7 @@ class PriceHk extends Model
     public $incrementing = true;
     public $timestamps   = false;
 
+    protected $connection = 'mysql';
     protected $table      = 'price_hk';
     protected $primaryKey = 'ID';
     protected $guarded    = ['ID'];

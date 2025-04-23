@@ -15,6 +15,7 @@ class GameHk extends Model
 
     public $incrementing = true;
 
+    protected $connection = 'mysql';
     protected $table      = 'game_hk';
     protected $primaryKey = 'ID';
     protected $guarded    = ['ID'];
@@ -27,10 +28,12 @@ class GameHk extends Model
     public function setReleaseDateAttribute($value)
     {
         if (!empty($value)) {
-            $this->attributes['ReleaseDate'] = DateTime::createFromFormat('y.m.d', $value)->format('Y-m-d');
+            $timestamp = strtotime($value);
+            $datetime  = date('y.m.d', $timestamp);
         } else {
-            $this->attributes['ReleaseDate'] = null;
+            $datetime = null;
         }
+        $this->attributes['ReleaseDate'] = $datetime;
     }
 
     public function scopeNeedSync($query)

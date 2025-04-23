@@ -98,11 +98,9 @@ class GameCrawl extends Command
 
     private function callBack($country)
     {
-        /*
         $this->call('summary:sync', [
             'country'    => $country,
             '--schedule' => $this->option('schedule')? true : false
         ]);
-        */
     }
 }

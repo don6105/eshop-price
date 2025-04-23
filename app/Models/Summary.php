@@ -14,6 +14,7 @@ class Summary extends Model
     public $incrementing = true;
     public $timestamps   = false;
 
+    protected $connection = 'mysql';
     protected $table      = 'summary';
     protected $primaryKey = 'ID';
     protected $guarded    = ['ID'];

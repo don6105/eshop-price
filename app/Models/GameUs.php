@@ -14,6 +14,7 @@ class GameUs extends Model
 
     public $incrementing = true;
 
+    protected $connection = 'mysql';
     protected $table      = 'game_us';
     protected $primaryKey = 'ID';
     protected $guarded    = ['ID'];
@@ -35,8 +36,7 @@ class GameUs extends Model
         if (!empty($value)) {
             $timestamp = strtotime($value);
             $datetime  = date('Y-m-d H:i:s', $timestamp);
-        }
-        if ($datetime == '1970-01-01 08:00:00'){
+        } else {
             $datetime = null;
         }
         $this->attributes['ReleaseDate'] = $datetime;
@@ -45,6 +45,12 @@ class GameUs extends Model
     public function setGenresAttribute($value)
     {
         $this->attributes['Genres'] = implode(', ', $value);
+    }
+
+    public function setNSOAttribute($value)
+    {
+        $pattern = 'Nintendo Switch Online compatible';
+        $this->attributes['NSO'] = in_array($pattern, $value)? 'Yes' : 'No';
     }
 
     public function setNumOfPlayersAttribute($value)
@@ -57,12 +63,6 @@ class GameUs extends Model
     public function setPublishersAttribute($value)
     {
         $this->attributes['Publishers'] = implode(', ', $value);
-    }
-
-    public function setNSOAttribute($value)
-    {
-        $pattern = 'Nintendo Switch Online compatible';
-        $this->attributes['NSO'] = in_array($pattern, $value)? 'Yes' : 'No';
     }
 
     public function scopeNeedSync($query)

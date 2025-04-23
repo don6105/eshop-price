@@ -9,6 +9,7 @@ use App\Models\GameHk as GameHkModel;
 use App\Models\PriceHk as PriceHkModel;
 use App\Libraries\Curl as CurlLib;
 use voku\helper\HtmlDomParser;
+use DateTime;
 
 define('HK_PAGE_URL', 'https://store.nintendo.com.hk/download-code?product_list_dir=asc&product_list_limit=48');
 
@@ -42,6 +43,7 @@ class GameHk extends BaseService implements GameContract
         do {
             echo $next_page.PHP_EOL;
             $response = $Curl->run($next_page);
+
             list($games, $next_page) = $this->parseGamePricePage($response);
             $this->saveGamesData($games); 
         } while($next_page !== null);
@@ -53,7 +55,7 @@ class GameHk extends BaseService implements GameContract
         $total_num = $this->getTodoGameInfo(true);
         while(count($todo_data = $this->getTodoGameInfo()) > 0) {
             foreach ($todo_data as $row) {
-                $response   = $Curl->run($row->URL);
+                $response   = $Curl->run($row->URL);             
                 $game_info  = $this->parseGameInfoPage($response);
                 $game_image = $this->parseGalleryImage($response);
                 $game_video = $this->parseGalleryVideo($response);
@@ -88,7 +90,6 @@ class GameHk extends BaseService implements GameContract
         } else {
             $next_page = html_entity_decode( $pages->findOne('a')->getAttribute('href') );
         }
-        //var_dump($pages); exit;
 
         $targets = $dom->find('#amasty-shopby-product-list li.product-item');
         $games   = [];
@@ -100,6 +101,9 @@ class GameHk extends BaseService implements GameContract
             $price       = floatval(trim(str_replace('HKD', '', $price)));
             $release_day = $t->findOne('.category-product-item-released')->innerText();
             $release_day = trim(str_replace('<span>發售日期</span>', '', $release_day));
+            $dt = DateTime::createFromFormat('y.m.d', $release_day);
+            $release_day = empty($dt)? null : $dt->format('Y-m-d');    
+            
             $games[] = [
                 'URL'         => $url,
                 'Boxart'      => $boxart,
@@ -107,7 +111,6 @@ class GameHk extends BaseService implements GameContract
                 'Price'       => $price,
                 'ReleaseDate' => $release_day
             ];
-            //var_dump($games); exit;
         }
         return array($games, $next_page);
     }
@@ -146,8 +149,7 @@ class GameHk extends BaseService implements GameContract
         $last_check = date('Y-m-d H:i:s', strtotime('-8 hours'));
         $orm = GameHkModel::where('UpdateInfoTime', '<', $last_check)
                 ->orWhereNull('UpdateInfoTime');
-        //$orm = GameHkModel::where('ID', '2');
-        
+
         if(!$getNum) {
             $batch_size = 500;
             $r = $orm->take($batch_size)->get();
